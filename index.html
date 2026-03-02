@@ -2926,8 +2926,8 @@ function updateDashboard() {
 
 
   // 슬라이더 동기화
-  document.getElementById('slider-wti').value = G.wti_rt.toFixed(2);
-  // Base 버튼 레이블 초기 세팅 (야후 실시간 WTI 연동)
+  document.getElementById('slider-wti').value = G.wti_gs.toFixed(2);  // 슬라이더 기준: 주간가
+  // Base 버튼 레이블 초기 세팅 — 주간가 기준
   const btnBase = document.getElementById('btn-base-wti');
   if (btnBase) btnBase.textContent = `Base $${Math.round(G.wti_gs)}`;  // 주간가 기준
   onWtiSlider();
