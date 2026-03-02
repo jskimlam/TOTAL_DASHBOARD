@@ -251,13 +251,33 @@ def calc_regression(df):
 # 4. WTI 실시간
 # ──────────────────────────────────────────────
 def get_wti(fallback=67.02):
+    # 1차: EIA API (GitHub Actions 서버에서 안정적, 야후 차단 우회)
+    try:
+        import requests
+        EIA_KEY = 'Kn0OoT6uANsY4SNF6cjnTlWrNsqccomROGcnyHiE'
+        url = (
+            'https://api.eia.gov/v2/petroleum/pri/spt/data/'
+            '?api_key=' + EIA_KEY +
+            '&frequency=daily&data[0]=value&facets[series][]=RWTC'
+            '&sort[0][column]=period&sort[0][direction]=desc&offset=0&length=1'
+        )
+        r = requests.get(url, timeout=10)
+        rows = r.json()['response']['data']
+        wti = float(rows[0]['value'])
+        if not (20 <= wti <= 200): raise ValueError(f"비정상: {wti}")
+        print(f"[WTI] EIA ${wti:.2f} ({rows[0]['period']})")
+        return wti, f"EIA({rows[0]['period']})"
+    except Exception as e:
+        print(f"[WTI] EIA 실패, yfinance 시도 ({e})")
+
+    # 2차: yfinance (야후 안 막혔을 경우 대비)
     try:
         import yfinance as yf
         h = yf.Ticker("CL=F").history(period="2d")
         if h.empty: raise ValueError("빈 데이터")
         wti = float(h['Close'].dropna().iloc[-1])
         if not (20 <= wti <= 200): raise ValueError(f"비정상: {wti}")
-        print(f"[WTI] 실시간 ${wti:.2f}")
+        print(f"[WTI] yfinance ${wti:.2f}")
         return wti, "야후파이낸스(실시간)"
     except Exception as e:
         print(f"[WTI] 폴백 ${fallback:.2f} ({e})")
