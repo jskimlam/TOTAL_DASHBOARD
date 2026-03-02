@@ -1,0 +1,44 @@
+name: Iran Risk x ABS/SM Cost Simulation
+
+on:
+  schedule:
+    - cron: '0 22 * * 0-4'
+    - cron: '0 3 * * 1-5'
+    - cron: '0 9 * * 1-5'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install Korean Font
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get install -y fonts-nanum
+        fc-cache -fv
+
+    - name: Install Python Dependencies
+      run: |
+        pip install --upgrade pip
+        pip install pandas matplotlib numpy yfinance scikit-learn requests
+
+    - name: Run Simulation
+      timeout-minutes: 5
+      run: python simulation.py
+
+    - name: Commit and Push Results
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action Bot"
+        git add risk_simulation_report.png simulation_result.csv
+        git commit -m "Risk Update $(date +'%Y-%m-%d %H:%M')" || echo "No changes"
+        git push
