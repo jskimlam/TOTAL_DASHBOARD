@@ -74,12 +74,12 @@
           <span class="text-sm text-blue-300 ml-2">v6.8</span>
         </h1>
         <p class="text-slate-300 text-xs mt-1">
-          LAM Advanced Procurement  |  WTI CL=F 실시간  |  구글시트 실측앵커
+          LAM Advanced Procurement  |  구글시트 주간 업데이트
           <span class="text-orange-400 ml-2 font-bold">★ 크래커마진(기타40%ET연동) | 수급신호 4종 병기</span>
         </p>
       </div>
       <div class="hdr-right text-right text-xs text-slate-300 space-y-0.5 shrink-0">
-        <div id="update-time">로딩 중...</div>
+        <div id="update-time">구글시트 주간 데이터</div>
         <div id="gs-date" class="text-yellow-600"></div>
         <div id="wti-source"></div>
       </div>
@@ -286,7 +286,7 @@
             <button onclick="setWtiScenario(80,100)"   class="text-xs bg-orange-900/60  text-orange-700  border border-orange-700  rounded-lg px-3 py-1.5 hover:bg-orange-800  transition">Moderate $80</button>
             <button onclick="setWtiScenario(90,150)"   class="text-xs bg-red-900/60     text-red-700     border border-red-700     rounded-lg px-3 py-1.5 hover:bg-red-800     transition">Severe $90</button>
             <button onclick="setWtiScenario(100,200)"  class="text-xs bg-red-950/80     text-red-700     border border-red-900     rounded-lg px-3 py-1.5 hover:bg-red-900     transition">Crisis $100</button>
-            <button onclick="resetWtiSlider()" class="text-xs bg-slate-700 text-slate-300 border border-slate-500 rounded-lg px-3 py-1.5 hover:bg-slate-600 transition ml-auto">↺ 실시간 동기화</button>
+            
           </div>
 
           <!-- ── SM / ABS 원가 구조 실시간 패널 ── -->
@@ -2965,9 +2965,9 @@ function loadCSV() {
       if (!document.getElementById('tab-sens').classList.contains('hidden')) renderSensCharts();
       if (d.Sens_SM_MARGIN){ SENS.sm_margin= parseFloat(d.Sens_SM_MARGIN);}
 
-      document.getElementById('update-time').textContent = '갱신: '+(d.UpdateTime||'');
-      document.getElementById('gs-date').textContent     = '구글시트: '+(d.GSheet_Date||'');
-      document.getElementById('wti-source').textContent  = d.WTI_Source||'';
+      document.getElementById('update-time').textContent = '구글시트 주간 데이터';
+      document.getElementById('gs-date').textContent     = '';
+      document.getElementById('wti-source').textContent  = '';
       if (d.Reg_N) document.getElementById('reg-meta').textContent = d.Reg_N+'주 데이터';
 
       // 크래커 슬라이더 실측값 라벨 갱신
@@ -3016,8 +3016,8 @@ function manualRefreshData() {
       G.bz_usg_mt_act = parseFloat(d.BZ_USG_Actual)    || G.bz_usg_mt_act;
       G.sm_margin_act = parseFloat(d.SM_Margin_Actual)  || G.sm_margin_act;
       G.cracker_act   = parseFloat(d.Cracker_Margin_Act)|| G.cracker_act;
-      document.getElementById('update-time').textContent = '갱신: '+(d.UpdateTime||'');
-      document.getElementById('gs-date').textContent     = '구글시트: '+(d.GSheet_Date||'');
+      document.getElementById('update-time').textContent = '구글시트 주간 데이터';
+      document.getElementById('gs-date').textContent     = '';
       // 대시보드 전체 갱신 + 슬라이더 초기화
       crackerUserEdited = false;
       updateDashboard();
@@ -3036,7 +3036,7 @@ function manualRefreshData() {
 }
 
 // ── WTI만 갱신 (30초 interval용) — GAS 프록시 방식 (CORS 완전 우회)
-// 야후파이낸스 직접 호출은 브라우저 두 번째 요청부터 CORS 차단 → GAS가 서버사이드 fetch
+// WTI — 구글시트 주간 업데이트 기반
 // WTI 갱신 — Finnhub 브라우저 직접 호출 (GAS 불필요, CORS 허용)
 const FINNHUB_KEY = 'd6igkr1r01qm7dc7ej90d6igkr1r01qm7dc7ej9g';
 
@@ -3075,7 +3075,7 @@ async function loadWTIOnly() {
   G.wti_rt = newWti;
 
   if (data.time) {
-    document.getElementById('update-time').textContent = '갱신: ' + data.time + ' (Finnhub)';
+    // WTI 자동갱신 비활성화
   }
 
   const btnBase = document.getElementById('btn-base-wti');
@@ -4172,8 +4172,7 @@ function setCrackerView(item) {
 updateDashboard();
 // 최초 전체 데이터 로드 (주간가격 + WTI)
 loadCSV();
-// WTI만 30초마다 갱신 (야후파이낸스 실시간)
-setInterval(loadWTIOnly, 10000);  // 10초마다 갱신 (GAS 콜드스타트 방지)
+// WTI 자동갱신 비활성화 — 구글시트 주간 업데이트 사용
 // 리포트 이미지 5분마다 갱신
 setInterval(refreshImg, 300000);
 
