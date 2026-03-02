@@ -57,6 +57,29 @@
       .metric-card { padding: .6rem .75rem !important; }
     }
 
+    /* ── 헤더 KPI 숫자 가시성 — 색상별 텍스트 외곽선 ── */
+    /* 빨강 계열 (크래커마진 적자, SM 적자 등) → 흰 외곽선 */
+    .text-red-500, .text-red-600, .text-red-700 {
+      text-shadow: 0 0 3px rgba(255,255,255,0.8), 0 0 6px rgba(255,255,255,0.4);
+    }
+    /* 초록 계열 (ABS Gap, SM 흑자 등) → 흰 외곽선 */
+    .text-emerald-300, .text-emerald-400, .text-emerald-700 {
+      text-shadow: 0 0 3px rgba(255,255,255,0.8), 0 0 6px rgba(255,255,255,0.4);
+    }
+    /* 주황/앰버 계열 → 흰 외곽선 */
+    .text-amber-700, .text-orange-500 {
+      text-shadow: 0 0 3px rgba(255,255,255,0.8), 0 0 6px rgba(255,255,255,0.4);
+    }
+    /* 노란색 계열 (WTI, 이론값 등) → 검정 외곽선 */
+    .text-yellow-300, .text-yellow-400 {
+      text-shadow: 0 0 3px rgba(0,0,0,0.9), 0 0 6px rgba(0,0,0,0.6), 1px 1px 0 rgba(0,0,0,0.8);
+    }
+    /* 헤더 KPI 숫자 전용 강화 */
+    #hdr-wti { text-shadow: 0 0 4px rgba(0,0,0,1), 1px 1px 0 rgba(0,0,0,0.9), -1px -1px 0 rgba(0,0,0,0.9) !important; }
+    #hdr-cracker { text-shadow: 0 0 4px rgba(255,255,255,0.9), 1px 1px 0 rgba(255,255,255,0.7) !important; }
+    #hdr-sm-margin { text-shadow: 0 0 4px rgba(255,255,255,0.9), 1px 1px 0 rgba(255,255,255,0.7) !important; }
+    #hdr-abs-gap { text-shadow: 0 0 4px rgba(255,255,255,0.9), 1px 1px 0 rgba(255,255,255,0.7) !important; }
+    #hdr-abs-gap-theory { text-shadow: 0 0 4px rgba(0,0,0,1), 1px 1px 0 rgba(0,0,0,0.9) !important; }
   </style>
 </head>
 <body class="p-4 md:p-6">
@@ -85,30 +108,36 @@
       </div>
     </div>
 
-    <!-- 헤더 KPI -->
-    <div class="hdr-kpi mt-4 grid grid-cols-3 md:grid-cols-5 gap-3">
-      <div class="text-center">
-        <div class="text-xs text-slate-300 mb-1">WTI <span class="text-slate-500">(주간)</span></div>
-        <div id="hdr-wti" class="text-2xl font-black text-yellow-400">$--</div>
-        <div class="text-xs text-slate-500 mt-0.5">EIA: <span id="hdr-wti-eia">$--</span></div>
+    <!-- 헤더 KPI 카드형 -->
+    <div class="hdr-kpi mt-4 grid grid-cols-3 md:grid-cols-5 gap-2">
+      <!-- WTI -->
+      <div class="rounded-xl bg-white/10 border border-yellow-400/30 p-2.5 text-center backdrop-blur-sm">
+        <div class="text-xs text-yellow-200 font-semibold mb-1">WTI <span class="text-yellow-400/60 text-[10px]">주간</span></div>
+        <div id="hdr-wti" class="text-2xl font-black text-yellow-300">$--</div>
+        <div class="text-[10px] text-yellow-200/50 mt-0.5">EIA <span id="hdr-wti-eia" class="text-yellow-200/70">$--</span></div>
       </div>
-      <div class="text-center">
-        <div class="text-xs text-slate-300 mb-1">크래커마진</div>
+      <!-- 크래커마진 -->
+      <div class="rounded-xl bg-white/10 border border-slate-400/30 p-2.5 text-center backdrop-blur-sm">
+        <div class="text-xs text-slate-200 font-semibold mb-1">크래커마진</div>
         <div id="hdr-cracker" class="text-2xl font-black">$--</div>
-        <div class="text-xs text-slate-300">ET×0.32+...</div>
+        <div class="text-[10px] text-slate-300/60 mt-0.5">ET×0.32+...</div>
       </div>
-
-      <div class="text-center">
-        <div class="text-xs text-slate-300 mb-1">SM Margin 실측</div>
+      <!-- SM Margin -->
+      <div class="rounded-xl bg-white/10 border border-blue-400/30 p-2.5 text-center backdrop-blur-sm">
+        <div class="text-xs text-blue-200 font-semibold mb-1">SM Margin 실측</div>
         <div id="hdr-sm-margin" class="text-2xl font-black">$--</div>
+        <div class="text-[10px] text-blue-200/50 mt-0.5">SM - 실측원가</div>
       </div>
-      <div class="text-center">
-        <div class="text-xs text-slate-300 mb-1">ABS Gap 실측</div>
-        <div id="hdr-abs-gap" class="text-2xl font-black text-emerald-400">$--</div>
+      <!-- ABS Gap -->
+      <div class="rounded-xl bg-white/10 border border-emerald-400/30 p-2.5 text-center backdrop-blur-sm">
+        <div class="text-xs text-emerald-200 font-semibold mb-1">ABS Gap 실측</div>
+        <div id="hdr-abs-gap" class="text-2xl font-black text-emerald-300">$--</div>
+        <div class="text-[10px] text-emerald-200/50 mt-0.5">ABS Mkt - Cost</div>
       </div>
-      <div class="text-center">
-        <div id="alert-badge"><span class="badge-warn">로딩중</span></div>
-        <div id="hdr-abs-gap-theory" class="text-lg font-black text-yellow-400 mt-1">이론 $--</div>
+      <!-- 신호/이론 -->
+      <div class="rounded-xl bg-white/10 border border-orange-400/30 p-2.5 text-center backdrop-blur-sm">
+        <div id="alert-badge" class="mb-1"><span class="badge-warn">로딩중</span></div>
+        <div id="hdr-abs-gap-theory" class="text-lg font-black text-yellow-300">이론 $--</div>
       </div>
     </div>
   </header>
@@ -282,12 +311,11 @@
             <div class="flex justify-between text-xs text-slate-700 mt-1"><span>Base</span><span>+$75</span><span>+$150</span><span>+$225</span><span>+$300</span></div>
           </div>
           <div class="flex flex-wrap gap-2">
-            <button onclick="setWtiScenario(G.wti_rt,0)" id="btn-base-wti" class="text-xs bg-emerald-900/60 text-emerald-700 border border-emerald-700 rounded-lg px-3 py-1.5 hover:bg-emerald-800 transition">Base $--</button>
-            <button onclick="setWtiScenario(70,50)"    class="text-xs bg-amber-900/60   text-amber-400   border border-amber-700   rounded-lg px-3 py-1.5 hover:bg-amber-800   transition">Mild $70</button>
-            <button onclick="setWtiScenario(80,100)"   class="text-xs bg-orange-900/60  text-orange-700  border border-orange-700  rounded-lg px-3 py-1.5 hover:bg-orange-800  transition">Moderate $80</button>
-            <button onclick="setWtiScenario(90,150)"   class="text-xs bg-red-900/60     text-red-700     border border-red-700     rounded-lg px-3 py-1.5 hover:bg-red-800     transition">Severe $90</button>
-            <button onclick="setWtiScenario(100,200)"  class="text-xs bg-red-950/80     text-red-700     border border-red-900     rounded-lg px-3 py-1.5 hover:bg-red-900     transition">Crisis $100</button>
-            
+            <button onclick="setWtiScenario(G.wti_gs,0)" id="btn-base-wti" class="text-xs bg-emerald-600 text-white border border-emerald-500 rounded-lg px-3 py-1.5 hover:bg-emerald-500 transition font-bold shadow-sm">Base $--</button>
+            <button onclick="setWtiScenario(70,50)"    class="text-xs bg-amber-500   text-white border border-amber-400   rounded-lg px-3 py-1.5 hover:bg-amber-400   transition font-bold shadow-sm">Mild $70</button>
+            <button onclick="setWtiScenario(80,100)"   class="text-xs bg-orange-500  text-white border border-orange-400  rounded-lg px-3 py-1.5 hover:bg-orange-400  transition font-bold shadow-sm">Moderate $80</button>
+            <button onclick="setWtiScenario(90,150)"   class="text-xs bg-red-500     text-white border border-red-400     rounded-lg px-3 py-1.5 hover:bg-red-400     transition font-bold shadow-sm">Severe $90</button>
+            <button onclick="setWtiScenario(100,200)"  class="text-xs bg-red-800     text-white border border-red-700     rounded-lg px-3 py-1.5 hover:bg-red-700     transition font-bold shadow-sm">Crisis $100</button>
           </div>
 
           <!-- ── SM / ABS 원가 구조 실시간 패널 ── -->
