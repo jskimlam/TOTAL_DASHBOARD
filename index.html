@@ -3037,57 +3037,55 @@ function manualRefreshData() {
 
 // ── WTI만 갱신 (30초 interval용) — GAS 프록시 방식 (CORS 완전 우회)
 // 야후파이낸스 직접 호출은 브라우저 두 번째 요청부터 CORS 차단 → GAS가 서버사이드 fetch
-// WTI 갱신 핵심 로직 (1회 시도)
+// WTI 갱신 — Finnhub 브라우저 직접 호출 (GAS 불필요, CORS 허용)
+const FINNHUB_KEY = 'd6igkr1r01qm7dc7ej90d6igkr1r01qm7dc7ej9g';
+
 async function _fetchWTI() {
-  const res = await fetch(GAS_URL + '?action=getWTI&_=' + Date.now());
-  if (!res.ok) throw new Error('HTTP ' + res.status);
-  const data = await res.json();
-  if (data.status !== 'OK' || !data.wti) throw new Error('GAS 응답 이상: ' + JSON.stringify(data));
-  return data;
+  // Finnhub 직접 호출 (CORS 허용) — OANDA:OIL_WTI 실시간 현물가
+  const url = 'https://finnhub.io/api/v1/quote?symbol=OANDA:OIL_WTI&token=' + FINNHUB_KEY;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Finnhub HTTP ' + res.status);
+  const d = await res.json();
+  if (!d.c || d.c <= 0) throw new Error('Finnhub 가격 없음: ' + JSON.stringify(d));
+  const kst = new Date(d.t * 1000).toLocaleString('ko-KR', {timeZone:'Asia/Seoul'});
+  return { wti: d.c, time: kst };
 }
 
-// WTI 갱신 실패 시 5초 후 1회 재시도 + 성공 시 UI 반영
+// WTI 갱신 실패 시 5초 후 1회 재시도
 async function loadWTIOnly() {
   let data = null;
   try {
-    data = await _fetchWTI();  // 1차 시도
+    data = await _fetchWTI();
   } catch (e1) {
     console.warn('[WTI 1차 실패] 5초 후 재시도:', e1.message);
     try {
-      await new Promise(r => setTimeout(r, 5000));  // 5초 대기
-      data = await _fetchWTI();  // 2차 재시도
+      await new Promise(r => setTimeout(r, 5000));
+      data = await _fetchWTI();
     } catch (e2) {
       console.warn('[WTI 2차 실패] 갱신 포기:', e2.message);
-      return;  // 두 번 다 실패하면 조용히 포기
+      return;
     }
   }
 
-  // 데이터 유효성 검사
   const newWti = parseFloat(data.wti);
-  if (isNaN(newWti)) return;
+  if (isNaN(newWti) || newWti <= 0) return;
 
-  // 변화가 0.001 미만이면 불필요한 렌더링 스킵
   if (Math.abs(newWti - G.wti_rt) < 0.001) return;
 
-  // WTI 실시간 갱신
   G.wti_rt = newWti;
 
-  // 헤더 타임스탬프 갱신 (KST 표시)
   if (data.time) {
-    document.getElementById('update-time').textContent = '갱신: ' + data.time + ' KST';
+    document.getElementById('update-time').textContent = '갱신: ' + data.time + ' (Finnhub)';
   }
 
-  // Base 버튼 레이블 실시간 WTI 반영
   const btnBase = document.getElementById('btn-base-wti');
   if (btnBase) btnBase.textContent = `Base $${Math.round(G.wti_rt)}`;
 
-  // 사용자가 슬라이더를 직접 조작 중이면 시뮬레이터는 건드리지 않음
   if (wtiUserEdited) return;
-
-  // 사용자 미조작 상태에서만 슬라이더 동기화 및 대시보드 갱신
   document.getElementById('slider-wti').value = G.wti_rt.toFixed(2);
   onWtiSlider();
 }
+
 
 function refreshImg() {
   document.getElementById('report-img').src = 'risk_simulation_report.png?t='+Date.now();
