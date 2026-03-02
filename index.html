@@ -445,6 +445,46 @@
               </div>
             </div>
           </div>
+          <!-- SM 회귀 레퍼런스 (오른쪽 패널) -->
+          <div class="mt-2 rounded-xl border border-blue-200 bg-blue-50 p-3 text-xs">
+            <div class="text-blue-700 font-black text-[10px] uppercase tracking-widest mb-2">📘 SM 회귀 레퍼런스 (BZ 연동 · R²=0.957)</div>
+            <div class="grid grid-cols-4 gap-1 text-center mb-2">
+              <div class="bg-white border border-blue-200 rounded p-1.5">
+                <div class="text-slate-500 text-[10px]">BZ $600–700</div>
+                <div class="font-black text-blue-700">$825</div>
+              </div>
+              <div class="bg-white border border-blue-200 rounded p-1.5">
+                <div class="text-slate-500 text-[10px]">BZ $700–800</div>
+                <div class="font-black text-blue-600">$924</div>
+              </div>
+              <div class="bg-white border border-amber-200 rounded p-1.5">
+                <div class="text-slate-500 text-[10px]">BZ $800–900</div>
+                <div class="font-black text-amber-600">$1,037</div>
+              </div>
+              <div class="bg-white border border-orange-200 rounded p-1.5">
+                <div class="text-slate-500 text-[10px]">BZ $900+</div>
+                <div class="font-black text-orange-600">$1,100+</div>
+              </div>
+            </div>
+            <div class="text-[10px] text-slate-600 space-y-1 border-t border-blue-200 pt-2">
+              <div class="flex justify-between">
+                <span>회귀: SM = $0.880 × BZ + $262</span>
+                <span>R² = <b class="text-slate-800">0.957</b></span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-500">회귀 예측 SM</span>
+                <span id="ref-sm-pred2" class="font-black text-blue-700">$--</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-500">시뮬 SM</span>
+                <span id="ref-sm-actual2" class="font-black text-blue-700">$--</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-500">차이 (시뮬−회귀)</span>
+                <span id="ref-sm-diff2" class="font-black">--</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -525,6 +565,46 @@
           <span class="text-slate-500">실시간 Gap:</span>
           <span id="ref-gap-actual" class="font-black">$--</span>
           <span id="ref-gap-diff-label" class="text-slate-400">(차이: <span id="ref-gap-diff" class="font-bold">--</span>)</span>
+        </div>
+      </div>
+
+      <!-- SM 회귀 레퍼런스 블록 (차트 아래) -->
+      <div class="mt-2 rounded-xl border border-blue-200 bg-blue-50 p-3 text-xs">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-blue-700 font-black text-[10px] uppercase tracking-widest">📘 SM 실데이터 회귀 레퍼런스</span>
+          <span class="text-slate-500 text-[10px]">2024~2026 · 544일 · SM = 0.880×BZ + 262 · R²=0.957</span>
+        </div>
+        <div class="grid grid-cols-4 gap-1 text-center mb-2">
+          <div class="bg-white border border-blue-200 rounded p-1.5">
+            <div class="text-slate-500 text-[10px]">BZ $600–700</div>
+            <div class="font-black text-blue-700">$825</div>
+          </div>
+          <div class="bg-white border border-blue-200 rounded p-1.5">
+            <div class="text-slate-500 text-[10px]">BZ $700–800</div>
+            <div class="font-black text-blue-600">$924</div>
+          </div>
+          <div class="bg-white border border-amber-200 rounded p-1.5">
+            <div class="text-slate-500 text-[10px]">BZ $800–900</div>
+            <div class="font-black text-amber-600">$1,037</div>
+          </div>
+          <div class="bg-white border border-orange-200 rounded p-1.5">
+            <div class="text-slate-500 text-[10px]">BZ $900+</div>
+            <div class="font-black text-orange-600">$1,100+</div>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-3 text-[10px] text-slate-600 border-t border-blue-200 pt-2">
+          <span>회귀: <b class="text-slate-800">SM = $0.880 × BZ + $262</b></span>
+          <span>R² = <b class="text-slate-800">0.957</b></span>
+          <span>vs WTI단독 R²=0.822</span>
+          <span class="text-blue-700 font-bold">★ 이란리스크 → BZ↑ → SM 시장가 간접 반영</span>
+        </div>
+        <div class="mt-2 flex flex-wrap items-center gap-2 text-[10px] border-t border-blue-200 pt-2">
+          <span class="text-slate-500">현재 BZ 기준 회귀 예측 SM:</span>
+          <span id="ref-sm-pred" class="font-black text-blue-700">$--</span>
+          <span class="text-slate-400 mx-1">|</span>
+          <span class="text-slate-500">시뮬 SM:</span>
+          <span id="ref-sm-actual" class="font-black text-blue-700">$--</span>
+          <span class="text-slate-400">(차이: <span id="ref-sm-diff" class="font-bold">--</span>)</span>
         </div>
       </div>
 
@@ -1294,9 +1374,14 @@ function calcAll(wti, risk=0, etOverride=null) {
   const bzAra   = G.bz_ara_act    + dTotal * SENS.bz_ara;
   const bzUsgMt = G.bz_usg_mt_act + dTotal * SENS.bz_usg * BZ_USG_TO_MT;
 
-  // ── SM 시장가: WTI에만 반응, 이란리스크 전가 안됨
-  // (다운스트림 수요 탄성 낮음 → 원료 Cost 상승분 즉시 전가 불가)
-  const sm  = G.sm_act + dWti * SENS.sm;
+  // ── SM 시장가: BZ 연동 회귀 (v6.9 수정)
+  // 실데이터 회귀: SM = 0.880×BZ + 262.2  R²=0.957 (544일, 2024~2026)
+  // BZ가 SM 원가의 67% → BZ 상승이 SM 시장가를 이끄는 구조 (WTI 단독 R²=0.822 대비 대폭 개선)
+  // 이란리스크 → NAP↑ → BZ↑(dTotal×SENS.bz) → SM 시장가도 부분 반영됨
+  const SM_BZ_COEF = 0.880;   // BZ→SM 실데이터 회귀계수
+  const SM_BZ_INTC = 262.2;   // 회귀 절편
+  const sm     = bz * SM_BZ_COEF + SM_BZ_INTC;           // BZ 기반 SM 시장가
+  const smRef  = Math.round(G.bz * SM_BZ_COEF + SM_BZ_INTC); // 현재 BZ 기준 회귀 예측 (레퍼런스용)
 
   // 크래커 마진 (시뮬 ET 사용)
   const bdBase    = G.bd + dTotal * SENS.bd;
@@ -1313,21 +1398,19 @@ function calcAll(wti, risk=0, etOverride=null) {
   const smMargin   = sm - smCost;
   const smMarginTh = sm - smCostTh;
 
-  // ABS Cost: SM+AN+BD 원료 상승분 그대로 흡수
-  const absCost   = sm*ABS_R.sm + an*ABS_R.an + bd*ABS_R.bd;
+  // ABS Cost: smCost(원료원가) 기반 — 이란리스크 포함 원료 상승분 흡수 (v6.9 수정)
+  // 기존 sm(시장가)×0.60 → smCost(BZ/ET/NAP 기반 원가)×0.60 으로 교체
+  // 이란리스크↑ → BZ/ET/NAP↑ → smCost↑ → absCost↑ → absGap 압박 정확히 반영
+  const absCost   = smCost*ABS_R.sm + an*ABS_R.an + bd*ABS_R.bd;
   const absCostTh = smCostTh*ABS_R.sm + an*ABS_R.an + bd*ABS_R.bd;
 
-  // ABS 시장가: WTI에만 부분 반응, 이란리스크 전가 안됨
-  // (최종 다운스트림 - 수요 탄성 최저, 원료 상승분 전가 가장 어려움)
-  // WTI↑: Cost(+13.89) > Mkt(+8.12) → Gap 축소 ✅
-  // WTI↓: Cost(-13.89) > Mkt(-8.12) 낙폭 → Gap 개선 ✅
-  // 이란리스크: Cost만 상승, Mkt 불변 → Gap 추가 압박 ✅
-  // ABS Gap: 직접 회귀값 사용 (실데이터 R²=0.541, -5.76/bbl)
-  // 간접계산(absMkt-absCost)은 SM/AN/BD SENS 오차가 고WTI에서 폭발적으로 누적됨
-  // → WTI +$41($67→$108)시 간접계산 Gap +$443 vs 직접회귀 Gap -$236 (현실적)
-  const absGap    = G.abs_gap_act + dWti * SENS.abs_gap;
-  const absMkt    = absCost + absGap;   // Mkt = Cost + Gap (역산, 표시 일관성)
-  const absGapTh  = absMkt - absCostTh;  // 이론 Gap은 이론원가 기준 유지
+  // ABS 시장가: WTI에만 부분 반응, 이란리스크 전가 안됨 (독립 직접회귀 고정)
+  // absMkt = 실측기준가 + dWti×SENS.abs_mkt (이란리스크 dTotal 미사용 — 설계 의도)
+  // → absMkt는 이란리스크와 완전 독립
+  // absGap = absMkt - absCost 역산 → 이란리스크↑ 시 absCost↑, absMkt 불변 → Gap 압박 ✅
+  const absMkt    = G.abs_mkt_act + dWti * SENS.abs_mkt;   // WTI만 반응, 이란리스크 무관
+  const absGap    = absMkt - absCost;                        // 역산: 이란리스크 Gap 압박 반영
+  const absGapTh  = absMkt - absCostTh;                     // 이론 Gap은 이론원가 기준 유지
 
   return {
     wti, dWti, riskEquiv, dTotal, risk,
@@ -1335,7 +1418,7 @@ function calcAll(wti, risk=0, etOverride=null) {
     bzAra, bzUsgMt,
     bzSpreadAra: bz - bzAra, bzSpreadUsg: bz - bzUsgMt,
     crackerSim, crackerDelta: crackerSim - G.cracker_act,
-    smCost, smCostTh, smMargin, smMarginTh,
+    smCost, smCostTh, smMargin, smMarginTh, smRef,
     absCost, absCostTh, absMkt, absGap, absGapTh,
   };
 }
@@ -1438,6 +1521,32 @@ function onWtiSlider() {
     gapEl.textContent = fmt(r.absGap, true);
     gapEl.className = 'font-black text-sm ' + (r.absGap < 0 ? 'text-red-600 alert-blink' : r.absGap < 150 ? 'text-amber-600' : 'text-emerald-700');
   }
+
+  // ── SM 회귀 레퍼런스 실시간 업데이트 (BZ 기반)
+  // SM = 0.880×BZ + 262.2  (현재 BZ 기준 예측 vs 시뮬 SM)
+  const smRefPred  = Math.round(r.bz * 0.880 + 262.2);  // 시뮬 BZ 기준 회귀 예측
+  const smRefBase  = Math.round(G.bz * 0.880 + 262.2);  // 현재(실측) BZ 기준 회귀 예측
+  const smSimVal   = Math.round(r.sm);
+  const smRefDiff  = smSimVal - smRefPred;
+  const smRefDiffStr = (smRefDiff>=0?'+':'') + '$' + smRefDiff;
+  const smRefDiffColor = Math.abs(smRefDiff) < 30 ? 'text-slate-600' : 'text-orange-600';
+  const smColor    = 'text-blue-700';
+
+  // 차트 아래 SM ref
+  const smPredEl   = document.getElementById('ref-sm-pred');
+  if (smPredEl)   smPredEl.textContent = '$' + smRefBase;
+  const smActEl    = document.getElementById('ref-sm-actual');
+  if (smActEl)  { smActEl.textContent = '$' + smSimVal; smActEl.className = 'font-black ' + smColor; }
+  const smDiffEl   = document.getElementById('ref-sm-diff');
+  if (smDiffEl) { smDiffEl.textContent = smRefDiffStr; smDiffEl.className = 'font-bold ' + smRefDiffColor; }
+
+  // 오른쪽 패널 SM ref
+  const smPredEl2  = document.getElementById('ref-sm-pred2');
+  if (smPredEl2)  smPredEl2.textContent = '$' + smRefBase;
+  const smActEl2   = document.getElementById('ref-sm-actual2');
+  if (smActEl2) { smActEl2.textContent = '$' + smSimVal; smActEl2.className = 'font-black ' + smColor; }
+  const smDiffEl2  = document.getElementById('ref-sm-diff2');
+  if (smDiffEl2){ smDiffEl2.textContent = smRefDiffStr; smDiffEl2.className = 'font-black ' + smRefDiffColor; }
 
   // ── 회귀 레퍼런스 실시간 업데이트 (차트 아래 + 오른쪽 패널 동시)
   const refPred = Math.round(-5.76 * wti + 656);  // 실데이터 회귀식
