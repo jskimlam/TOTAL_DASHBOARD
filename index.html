@@ -2925,29 +2925,47 @@ function manualRefreshData() {
   });
 }
 
-// ── WTI만 갱신 (30초 interval용) — 주간가격은 건드리지 않음
-function loadWTIOnly() {
-  Papa.parse('simulation_result.csv?t='+Date.now(), {
-    download:true, header:true, skipEmptyLines:true,
-    complete(res) {
-      if (!res.data?.length) return;
-      const d = res.data[0];
-      // WTI 실시간 가격만 갱신
-      const newWti = parseFloat(d.WTI) || G.wti_rt;
-      if (Math.abs(newWti - G.wti_rt) < 0.001) return; // 변화 없으면 스킵
-      G.wti_rt = newWti;
-      // Base 버튼 레이블 실시간 갱신 (야후 WTI 연동)
-      const btnBase = document.getElementById('btn-base-wti');
-      if (btnBase) btnBase.textContent = `Base $${Math.round(G.wti_rt)}`;
-      document.getElementById('update-time').textContent = '갱신: '+(d.UpdateTime||'');
-      // ── 사용자가 슬라이더를 직접 조작 중이면 시뮬레이터는 건드리지 않음
-      // 페이지 새로고침 시에만 슬라이더가 실시간 WTI로 초기화됨
-      if (wtiUserEdited) return;
-      // 사용자 미조작 상태에서만 슬라이더 동기화
-      document.getElementById('slider-wti').value = G.wti_rt.toFixed(2);
-      onWtiSlider();
+// ── WTI만 갱신 (30초 interval용) — GAS 프록시 방식 (CORS 완전 우회)
+// 야후파이낸스 직접 호출은 브라우저 두 번째 요청부터 CORS 차단 → GAS가 서버사이드 fetch
+async function loadWTIOnly() {
+  try {
+    // GAS에 ?action=getWTI 파라미터로 요청 → GAS가 야후파이낸스에서 WTI fetch 후 반환
+    const res = await fetch(GAS_URL + '?action=getWTI&_=' + Date.now());
+    if (!res.ok) return; // 네트워크 오류 시 조용히 스킵
+    const data = await res.json();
+
+    // GAS 응답 구조: { status:'OK', wti: 67.34, time: '2026-03-02 14:30:00' }
+    if (data.status !== 'OK' || !data.wti) return;
+
+    const newWti = parseFloat(data.wti);
+    if (isNaN(newWti)) return;
+
+    // 변화가 0.001 미만이면 불필요한 렌더링 스킵
+    if (Math.abs(newWti - G.wti_rt) < 0.001) return;
+
+    // WTI 실시간 갱신
+    G.wti_rt = newWti;
+
+    // 헤더 타임스탬프 갱신
+    if (data.time) {
+      document.getElementById('update-time').textContent = '갱신: ' + data.time;
     }
-  });
+
+    // Base 버튼 레이블 실시간 WTI 반영
+    const btnBase = document.getElementById('btn-base-wti');
+    if (btnBase) btnBase.textContent = `Base $${Math.round(G.wti_rt)}`;
+
+    // ── 사용자가 슬라이더를 직접 조작 중이면 시뮬레이터는 건드리지 않음
+    if (wtiUserEdited) return;
+
+    // 사용자 미조작 상태에서만 슬라이더 동기화 및 대시보드 갱신
+    document.getElementById('slider-wti').value = G.wti_rt.toFixed(2);
+    onWtiSlider();
+
+  } catch (e) {
+    // 네트워크 오류 등 예외 발생 시 조용히 스킵 (콘솔에만 기록)
+    console.warn('[WTI 갱신 실패]', e.message);
+  }
 }
 
 function refreshImg() {
@@ -4034,7 +4052,7 @@ setInterval(refreshImg, 300000);
 // ══════════════════════════════════════════════════
 // 사전원가 예측 → 구글시트 저장
 // ══════════════════════════════════════════════════
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbz7Z7Y93lUwOp7oPcJEe6tR5VlojIoGPkr_ompwCQ1EC9gHFAE4m26Y-_OtEpoHhOw_/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbz9NkhNg0m9fCrk2P-2qEg6LZX4_dQBSP66gHEj2EY1gCR8MwtTXjXtpN-WECOlzV12/exec';
 
 async function saveForecastToSheet() {
   const btn = document.getElementById('fc-save-btn');
