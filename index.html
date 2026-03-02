@@ -1009,7 +1009,7 @@
       <h3 class="text-slate-700 font-black text-sm mb-1">🌡 WTI 구간별 원료 민감도 히트맵</h3>
       <p class="text-xs text-slate-600 mb-3">WTI $1 상승 시 원료별 가격 변화량 — 색상 농도가 짙을수록 민감도 높음</p>
       <div class="overflow-x-auto">
-        <table class="w-full text-xs border-collapse" id="sens-heatmap-table"></table>
+        <table class="w-full text-xs border-collapse" id="sens-heatmap"></table>
       </div>
     </div>
 
@@ -2534,14 +2534,7 @@ function renderSensBeforeAfter() {
   });
 }
 
-function renderSensCharts() {
-  setTimeout(() => {
-    renderSensHeatmap();
-    renderSensContribChart();
-    renderR2Gauges();
-    renderSensBeforeAfter();
-  }, 150);
-}
+// renderSensCharts 구버전 제거 — 3609줄 최신 버전 사용
 
 
 let scChart = null;
