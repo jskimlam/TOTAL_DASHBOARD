@@ -41,4 +41,5 @@ jobs:
         git config --local user.name "GitHub Action Bot"
         git add risk_simulation_report.png simulation_result.csv
         git commit -m "Risk Update $(date +'%Y-%m-%d %H:%M')" || echo "No changes"
+        git pull --rebase origin main
         git push
