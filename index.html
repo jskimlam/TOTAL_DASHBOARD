@@ -1004,61 +1004,10 @@
       </div>
     </div>
 
-    <!-- ══ 1. WTI 구간별 민감도 히트맵 ══ -->
+    <!-- ① WTI 구간별 원료 민감도 히트맵 -->
     <div class="bg-sky-50 border border-blue-200 rounded-2xl p-5 mt-4 shadow-sm">
       <h3 class="text-slate-700 font-black text-sm mb-1">🌡 WTI 구간별 원료 민감도 히트맵</h3>
       <p class="text-xs text-slate-600 mb-3">WTI $1 상승 시 원료별 가격 변화량 — 색상 농도가 짙을수록 민감도 높음</p>
-      <div class="overflow-x-auto">
-        <table class="w-full text-xs border-collapse" id="sens-heatmap"></table>
-      </div>
-    </div>
-
-    <!-- ══ 2. ABS 원가 WTI 리스크 기여 분해 ══ -->
-    <div class="bg-sky-50 border border-blue-200 rounded-2xl p-5 mt-4 shadow-sm">
-      <h3 class="text-slate-700 font-black text-sm mb-1">💥 WTI $1 상승 시 ABS 원가 기여 분해</h3>
-      <p class="text-xs text-slate-600 mb-3">SM·AN·BD가 ABS 원가에 얼마나 전가되는지 — 리스크 주범 파악</p>
-      <div class="relative" style="height:240px"><canvas id="sens-contrib-chart" height="240"></canvas></div>
-    </div>
-
-    <!-- ══ 3. R² 모델 신뢰도 게이지 ══ -->
-    <div class="bg-sky-50 border border-blue-200 rounded-2xl p-5 mt-4 shadow-sm">
-      <h3 class="text-slate-700 font-black text-sm mb-1">🎯 회귀모델 R² 신뢰도 게이지</h3>
-      <p class="text-xs text-slate-600 mb-3">R²가 높을수록 WTI로 원료가격 예측 신뢰성 높음 — 낮은 품목은 별도 요인 존재</p>
-      <div id="sens-r2-gauges" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
-    </div>
-
-    <!-- ══ 4. 민감도 Before/After 원가 시뮬 ══ -->
-    <div class="bg-sky-50 border border-blue-200 rounded-2xl p-5 mt-4 shadow-sm">
-      <h3 class="text-slate-700 font-black text-sm mb-1">⚖ 민감도 변경 Before / After 원가 비교</h3>
-      <p class="text-xs text-slate-600 mb-3">슬라이더 조작 시 기본값 대비 현재 설정으로 ABS 원가가 얼마나 달라지는지 실시간 비교</p>
-      <div class="grid md:grid-cols-3 gap-4 mb-4">
-        <div class="bg-white rounded-xl border border-slate-200 p-4 text-center">
-          <div class="text-xs text-slate-700 font-bold mb-1">기본값 ABS 원가</div>
-          <div id="ba-before" class="text-2xl font-black text-slate-700">$---</div>
-          <div class="text-xs text-slate-600 mt-1">원래 SENS 기준</div>
-        </div>
-        <div class="bg-white rounded-xl border border-slate-200 p-4 text-center">
-          <div class="text-xs text-slate-700 font-bold mb-1">현재 설정 ABS 원가</div>
-          <div id="ba-after" class="text-2xl font-black text-blue-700">$---</div>
-          <div class="text-xs text-slate-600 mt-1">변경된 SENS 기준</div>
-        </div>
-        <div class="bg-white rounded-xl border border-slate-200 p-4 text-center">
-          <div class="text-xs text-slate-700 font-bold mb-1">원가 차이 (After − Before)</div>
-          <div id="ba-diff" class="text-2xl font-black">$---</div>
-          <div id="ba-diff-pct" class="text-xs text-slate-600 mt-1">---</div>
-        </div>
-      </div>
-      <div class="relative" style="height:220px"><canvas id="sens-ba-chart" height="220"></canvas></div>
-    </div>
-
-    <!-- ① WTI 구간별 원료 민감도 히트맵 -->
-    <div class="bg-sky-50 border border-blue-200 rounded-2xl p-5 mt-4 shadow-sm">
-      <div class="flex items-center justify-between mb-3">
-        <div>
-          <h3 class="text-slate-700 font-black text-sm">🌡 WTI 구간별 원료 민감도 히트맵</h3>
-          <p class="text-xs text-slate-600 mt-0.5">WTI $1 상승 시 각 원료 가격 변화량 — 색상 농도 = 민감도 강도</p>
-        </div>
-      </div>
       <div class="overflow-x-auto">
         <table class="w-full text-xs border-collapse" id="sens-heatmap"></table>
       </div>
@@ -2429,7 +2378,7 @@ function renderR2Gauges_OLD() {
 
 // ④ Before/After 원가 시뮬 차트
 let sensBaChart = null;
-function renderSensBeforeAfter() {
+function renderSensBeforeAfter_OLD() {
   const wti = G.wti_gs;  // 기준: 주간가
 
   // Before: 기본 SENS 기준 원료가
