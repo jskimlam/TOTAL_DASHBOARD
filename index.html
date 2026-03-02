@@ -1017,7 +1017,7 @@
     <div class="bg-sky-50 border border-blue-200 rounded-2xl p-5 mt-4 shadow-sm">
       <h3 class="text-slate-700 font-black text-sm mb-1">💥 WTI $1 상승 시 ABS 원가 기여 분해</h3>
       <p class="text-xs text-slate-600 mb-3">SM·AN·BD가 ABS 원가에 얼마나 전가되는지 — 리스크 주범 파악</p>
-      <div class="relative" style="height:240px"><canvas id="sens-contrib-chart"></canvas></div>
+      <div class="relative" style="height:240px"><canvas id="sens-contrib-chart" height="240"></canvas></div>
     </div>
 
     <!-- ══ 3. R² 모델 신뢰도 게이지 ══ -->
@@ -1048,7 +1048,7 @@
           <div id="ba-diff-pct" class="text-xs text-slate-600 mt-1">---</div>
         </div>
       </div>
-      <div class="relative" style="height:220px"><canvas id="sens-ba-chart"></canvas></div>
+      <div class="relative" style="height:220px"><canvas id="sens-ba-chart" height="220"></canvas></div>
     </div>
 
     <!-- ① WTI 구간별 원료 민감도 히트맵 -->
@@ -1073,7 +1073,7 @@
         </div>
       </div>
       <div class="relative" style="height:240px">
-        <canvas id="sens-contrib-chart"></canvas>
+        <canvas id="sens-contrib-chart" height="240"></canvas>
       </div>
     </div>
 
@@ -1099,7 +1099,7 @@
         </div>
       </div>
       <div class="relative" style="height:260px">
-        <canvas id="sens-ba-chart"></canvas>
+        <canvas id="sens-ba-chart" height="220"></canvas>
       </div>
     </div>
   </div>
@@ -2296,7 +2296,7 @@ function getScenarios() {
 const SENS_DEFAULT = { bz:16.81, et:6.13, bd:20.48, an:7.87, sm:14.75, nap:6.52, pr:4.18 };
 
 // ① WTI 구간별 민감도 히트맵
-function renderSensHeatmap() {
+function renderSensHeatmap_OLD() {
   const el = document.getElementById('sens-heatmap-table');
   if (!el) return;
   const items = [
@@ -2341,7 +2341,7 @@ function renderSensHeatmap() {
 
 // ② ABS 원가 기여 분해 차트
 let sensContribChart = null;
-function renderSensContribChart() {
+function renderSensContribChart_OLD() {
   const canvas = document.getElementById('sens-contrib-chart');
   if (!canvas) return;
   const newCanvas = canvas.cloneNode(true);
@@ -2389,7 +2389,7 @@ function renderSensContribChart() {
 }
 
 // ③ R² 게이지 렌더링
-function renderR2Gauges() {
+function renderR2Gauges_OLD() {
   const el = document.getElementById('sens-r2-gauges');
   if (!el) return;
   const items = [
