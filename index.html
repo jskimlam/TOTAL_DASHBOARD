@@ -4145,7 +4145,10 @@ function setCrackerView(item) {
 updateDashboard();
 // 최초 전체 데이터 로드 (주간가격 + WTI)
 loadCSV();
-// WTI 자동갱신 비활성화 — 구글시트 주간 업데이트 사용
+
+// ★ 30초마다 OANDA 실시간 WTI 유가 자동 갱신 ★
+setInterval(loadWTIOnly, 30000);
+
 // 리포트 이미지 5분마다 갱신
 setInterval(refreshImg, 300000);
 
