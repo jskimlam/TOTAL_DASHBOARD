@@ -3014,8 +3014,8 @@ function manualRefreshData() {
 const FINNHUB_KEY = 'd6igkr1r01qm7dc7ej90d6igkr1r01qm7dc7ej9g';
 
 async function _fetchWTI() {
-  // Finnhub 직접 호출 (CORS 허용) — OANDA:OIL_WTI 실시간 현물가
-  const url = 'https://finnhub.io/api/v1/quote?symbol=OANDA:OIL_WTI&token=' + FINNHUB_KEY;
+  // 심볼명을 OANDA:WTICO_USD 로 수정
+  const url = 'https://finnhub.io/api/v1/quote?symbol=OANDA:WTICO_USD&token=' + FINNHUB_KEY;
   const res = await fetch(url);
   if (!res.ok) throw new Error('Finnhub HTTP ' + res.status);
   const d = await res.json();
