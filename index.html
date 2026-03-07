@@ -1281,12 +1281,12 @@ function showTab(id, btn) {
 // 앵커 상태 & 파라미터
 // ══════════════════════════════════════════════
 let G = {
-  wti_gs:67.02,
-  bz:772, et:710, bd:1270, an:1315, nap:637,
-  sm_act:966, abs_mkt_act:1060, abs_gap_act:250, pr_act:870,
-  bz_ara_act:720, bz_usg_mt_act:680,
-  sm_margin_act:-1,  // v6.8: calcAll에서 sm-smCost로 직접계산, 이 값은 구글시트 fallback용
-  cracker_act: 0,  // 실측 크래커마진 (CSV 로드 후 갱신)
+  wti_gs:90.9,
+  bz:967.7, et:870, bd:1500, an:1100, nap:776,
+  sm_act:1171, abs_mkt_act:1365, abs_gap_act:162.4, pr_act:920,
+  bz_ara_act:1031, bz_usg_mt_act:953.7,
+  sm_margin_act:116.4,  // CSV 로드 전 임시 기본값
+  cracker_act: -301.4,  // CSV 로드 전 임시 기본값
 };
 
 let SENS = {
@@ -1312,6 +1312,82 @@ const CR_SPREAD = {et:300, pr:250, bd:450, bz:150};  // PR: +$200 → +$250 (업
 // ══════════════════════════════════════════════
 const fmt  = (v, sign=false) => isNaN(v)||v===null ? '--' : (sign&&v>=0?'+':'')+'$'+Math.round(v).toLocaleString();
 const fmtF = (v, d=1) => isNaN(v) ? '--' : v.toFixed(d);
+
+const numOr = (v, fallback) => {
+  const n = parseFloat(v);
+  return Number.isFinite(n) ? n : fallback;
+};
+const textOr = (v, fallback='') => (v === undefined || v === null || String(v).trim() === '') ? fallback : String(v).trim();
+
+function applyCsvRow(d) {
+  G.wti_gs        = numOr(d.WTI_GSheet, G.wti_gs);
+  G.bz            = numOr(d.BZ_Actual, G.bz);
+  G.et            = numOr(d.ET_Actual, G.et);
+  G.bd            = numOr(d.BD_Actual, G.bd);
+  G.an            = numOr(d.AN_Actual, G.an);
+  G.nap           = numOr(d.NAP, G.nap);
+  G.sm_act        = numOr(d.SM_Actual, G.sm_act);
+  G.abs_mkt_act   = numOr(d.ABS_Mkt_Actual, G.abs_mkt_act);
+  G.pr_act        = numOr(d.PR_Actual, G.pr_act);
+  G.bz_ara_act    = numOr(d.BZ_ARA_Actual, G.bz_ara_act);
+  G.bz_usg_mt_act = numOr(d.BZ_USG_Actual, numOr(d.BZ_USG_MT, G.bz_usg_mt_act));
+  G.sm_margin_act = numOr(d.SM_Margin_Actual, G.sm_margin_act);
+  G.cracker_act   = numOr(d.Cracker_Margin_Act, G.cracker_act);
+
+  if (Number.isFinite(parseFloat(d.ABS_Gap_Actual))) {
+    G.abs_gap_act = parseFloat(d.ABS_Gap_Actual);
+  } else if ([G.abs_mkt_act, G.sm_act, G.an, G.bd].every(Number.isFinite)) {
+    G.abs_gap_act = G.abs_mkt_act - (G.sm_act*0.60 + G.an*0.25 + G.bd*0.15);
+  }
+
+  if (d.NAP_Sens_Equiv_Basis) NAP_EQUIV = numOr(d.NAP_Sens_Equiv_Basis, NAP_EQUIV);
+
+  if (d.Sens_BZ)       { SENS.bz       = numOr(d.Sens_BZ, SENS.bz);             setSensCard('bz',      d.Sens_BZ,      d.R2_BZ); }
+  if (d.Sens_ET)       { SENS.et       = numOr(d.Sens_ET, SENS.et);             setSensCard('et',      d.Sens_ET,      d.R2_ET); }
+  if (d.Sens_SM)       { SENS.sm       = numOr(d.Sens_SM, SENS.sm);             setSensCard('sm',      d.Sens_SM,      d.R2_SM); }
+  if (d.Sens_BD)       { SENS.bd       = numOr(d.Sens_BD, SENS.bd);             setSensCard('bd',      d.Sens_BD,      d.R2_BD); }
+  if (d.Sens_AN)       { SENS.an       = numOr(d.Sens_AN, SENS.an);             setSensCard('an',      d.Sens_AN,      d.R2_AN); }
+  if (d.Sens_NAP)      { SENS.nap      = numOr(d.Sens_NAP, SENS.nap);           setSensCard('nap',     d.Sens_NAP,     d.R2_NAP); }
+  if (d.Sens_PR)       { SENS.pr       = numOr(d.Sens_PR, SENS.pr);             setSensCard('pr',      d.Sens_PR,      d.R2_PR); }
+  if (d.Sens_ABS_MKT)  { SENS.abs_mkt  = numOr(d.Sens_ABS_MKT, SENS.abs_mkt);   setSensCard('abs_mkt', d.Sens_ABS_MKT, d.R2_ABS_MKT); }
+  if (d.Sens_ABS_GAP)  { SENS.abs_gap  = numOr(d.Sens_ABS_GAP, SENS.abs_gap);   setSensCard('abs_gap', d.Sens_ABS_GAP, d.R2_ABS_GAP); }
+  if (d.Sens_SM_COST)  { SENS.sm_cost  = numOr(d.Sens_SM_COST, SENS.sm_cost);   setSensCard('sm_cost', d.Sens_SM_COST); }
+  if (d.Sens_SM_MARGIN){ SENS.sm_margin= numOr(d.Sens_SM_MARGIN, SENS.sm_margin); }
+
+  document.getElementById('update-time').textContent = textOr(d.UpdateTime, '구글시트 주간 데이터');
+  document.getElementById('gs-date').textContent = textOr(d.GSheet_Date, '');
+  if (d.Reg_N && document.getElementById('reg-meta')) {
+    document.getElementById('reg-meta').textContent = d.Reg_N + '주 데이터';
+  }
+
+  const etActualEl = document.getElementById('cr-et-actual');
+  const napActualEl = document.getElementById('cr-nap-actual');
+  if (etActualEl)  etActualEl.textContent  = `$${Math.round(G.et)}`;
+  if (napActualEl) napActualEl.textContent = `$${Math.round(G.nap)}`;
+
+  syncCrackerHistoryWithLatest(d);
+
+  if (!document.getElementById('tab-sens').classList.contains('hidden')) renderSensCharts();
+}
+
+function fetchLatestCsvRow(onSuccess, onError) {
+  Papa.parse('simulation_result.csv?t=' + Date.now(), {
+    download: true,
+    header: true,
+    skipEmptyLines: true,
+    complete(res) {
+      const rows = Array.isArray(res.data) ? res.data.filter(r => r && Object.values(r).some(v => String(v ?? '').trim() !== '')) : [];
+      if (!rows.length) {
+        if (onError) onError(new Error('CSV is empty'));
+        return;
+      }
+      onSuccess(rows[0]);
+    },
+    error(err) {
+      if (onError) onError(err || new Error('CSV parse failed'));
+    }
+  });
+}
 
 function crackerColor(m) {
   if (m >= 50)  return 'cracker-positive';
@@ -2889,61 +2965,16 @@ function alertBadge(absGap) {
 }
 
 function loadCSV() {
-  Papa.parse('simulation_result.csv?t='+Date.now(), {
-    download:true, header:true, skipEmptyLines:true,
-    complete(res) {
-      if (!res.data?.length) return;
-      const d = res.data[0];
-
-      G.wti_gs        = parseFloat(d.WTI_GSheet)       || G.wti_gs;
-      G.bz            = parseFloat(d.BZ_Actual)        || G.bz;
-      G.et            = parseFloat(d.ET_Actual)        || G.et;
-      G.bd            = parseFloat(d.BD_Actual)        || G.bd;
-      G.an            = parseFloat(d.AN_Actual)        || G.an;
-      G.nap           = parseFloat(d.NAP)              || G.nap;
-      G.sm_act        = parseFloat(d.SM_Actual)        || G.sm_act;
-      G.abs_mkt_act   = parseFloat(d.ABS_Mkt_Actual)   || G.abs_mkt_act;
-      // abs_gap_act: 구글시트에 ABS_Gap_Actual 컬럼 있으면 사용, 없으면 실측 역산
-      if (d.ABS_Gap_Actual && parseFloat(d.ABS_Gap_Actual)) {
-        G.abs_gap_act = parseFloat(d.ABS_Gap_Actual);
-      } else if (G.abs_mkt_act && G.sm_act && G.an && G.bd) {
-        // ABS Gap = Mkt - (SM×0.60 + AN×0.25 + BD×0.15)
-        G.abs_gap_act = G.abs_mkt_act - (G.sm_act*0.60 + G.an*0.25 + G.bd*0.15);
-      }
-      G.pr_act        = parseFloat(d.PR_Actual)        || G.pr_act;
-      G.bz_ara_act    = parseFloat(d.BZ_ARA_Actual)    || G.bz_ara_act;
-      G.bz_usg_mt_act = parseFloat(d.BZ_USG_Actual)   || G.bz_usg_mt_act;
-      G.sm_margin_act = parseFloat(d.SM_Margin_Actual) || G.sm_margin_act;
-      G.cracker_act   = parseFloat(d.Cracker_Margin_Act)|| G.cracker_act;
-
-      if (d.NAP_Sens_Equiv_Basis) NAP_EQUIV = parseFloat(d.NAP_Sens_Equiv_Basis) || NAP_EQUIV;
-
-      if (d.Sens_BZ)       { SENS.bz       = parseFloat(d.Sens_BZ);       setSensCard('bz',       d.Sens_BZ,       d.R2_BZ);       }
-      if (d.Sens_ET)       { SENS.et       = parseFloat(d.Sens_ET);       setSensCard('et',       d.Sens_ET,       d.R2_ET);       }
-      if (d.Sens_SM)       { SENS.sm       = parseFloat(d.Sens_SM);       setSensCard('sm',       d.Sens_SM,       d.R2_SM);       }
-      if (d.Sens_BD)       { SENS.bd       = parseFloat(d.Sens_BD);       setSensCard('bd',       d.Sens_BD,       d.R2_BD);       }
-      if (d.Sens_AN)       { SENS.an       = parseFloat(d.Sens_AN);       setSensCard('an',       d.Sens_AN,       d.R2_AN);       }
-      if (d.Sens_NAP)      { SENS.nap      = parseFloat(d.Sens_NAP);      setSensCard('nap',      d.Sens_NAP,      d.R2_NAP);      }
-      if (d.Sens_PR)       { SENS.pr       = parseFloat(d.Sens_PR);       setSensCard('pr',       d.Sens_PR,       d.R2_PR);       }
-      if (d.Sens_ABS_MKT)  { SENS.abs_mkt  = parseFloat(d.Sens_ABS_MKT);  setSensCard('abs_mkt',  d.Sens_ABS_MKT,  d.R2_ABS_MKT);  }
-      if (d.Sens_ABS_GAP)  { SENS.abs_gap  = parseFloat(d.Sens_ABS_GAP);  setSensCard('abs_gap',  d.Sens_ABS_GAP,  d.R2_ABS_GAP);  }
-      if (d.Sens_SM_COST)  { SENS.sm_cost  = parseFloat(d.Sens_SM_COST);  setSensCard('sm_cost',  d.Sens_SM_COST);                 }
-      // 민감도 탭이 활성화 상태면 차트 갱신
-      if (!document.getElementById('tab-sens').classList.contains('hidden')) renderSensCharts();
-      if (d.Sens_SM_MARGIN){ SENS.sm_margin= parseFloat(d.Sens_SM_MARGIN);}
-
-      document.getElementById('update-time').textContent = '구글시트 주간 데이터';
-      document.getElementById('gs-date').textContent     = '';
-      if (d.Reg_N) document.getElementById('reg-meta').textContent = d.Reg_N+'주 데이터';
-
-      // 크래커 슬라이더 실측값 라벨 갱신
-      document.getElementById('cr-et-actual').textContent  = `$${Math.round(G.et)}`;
-      document.getElementById('cr-nap-actual').textContent = `$${Math.round(G.nap)}`;
-
+  fetchLatestCsvRow(
+    (d) => {
+      applyCsvRow(d);
       updateDashboard();
     },
-    error() { document.getElementById('update-time').textContent = 'CSV 로드 실패'; }
-  });
+    () => {
+      document.getElementById('update-time').textContent = 'CSV 로드 실패';
+      document.getElementById('gs-date').textContent = 'simulation_result.csv 확인 필요';
+    }
+  );
 }
 
 // ── 수동 시장가격 갱신 (📡 버튼용) — 전체 데이터 갱신 후 슬라이더 초기화
@@ -2953,37 +2984,10 @@ function manualRefreshData() {
     btn.textContent = '⏳ 갱신 중...';
     btn.disabled = true;
   }
-  Papa.parse('simulation_result.csv?t='+Date.now(), {
-    download:true, header:true, skipEmptyLines:true,
-    complete(res) {
-      if (!res.data?.length) {
-        if (btn) { btn.textContent = '❌ 실패'; btn.disabled = false; }
-        return;
-      }
-      const d = res.data[0];
-      // 전체 주간가격 갱신
-      G.wti_gs        = parseFloat(d.WTI_GSheet)        || G.wti_gs;
-      G.bz            = parseFloat(d.BZ_Actual)         || G.bz;
-      G.et            = parseFloat(d.ET_Actual)         || G.et;
-      G.bd            = parseFloat(d.BD_Actual)         || G.bd;
-      G.an            = parseFloat(d.AN_Actual)         || G.an;
-      G.nap           = parseFloat(d.NAP)               || G.nap;
-      G.sm_act        = parseFloat(d.SM_Actual)         || G.sm_act;
-      G.abs_mkt_act   = parseFloat(d.ABS_Mkt_Actual)    || G.abs_mkt_act;
-      // abs_gap_act: 구글시트에 ABS_Gap_Actual 컬럼 있으면 사용, 없으면 실측 역산
-      if (d.ABS_Gap_Actual && parseFloat(d.ABS_Gap_Actual)) {
-        G.abs_gap_act = parseFloat(d.ABS_Gap_Actual);
-      } else if (G.abs_mkt_act && G.sm_act && G.an && G.bd) {
-        G.abs_gap_act = G.abs_mkt_act - (G.sm_act*0.60 + G.an*0.25 + G.bd*0.15);
-      }
-      G.pr_act        = parseFloat(d.PR_Actual)         || G.pr_act;
-      G.bz_ara_act    = parseFloat(d.BZ_ARA_Actual)     || G.bz_ara_act;
-      G.bz_usg_mt_act = parseFloat(d.BZ_USG_Actual)    || G.bz_usg_mt_act;
-      G.sm_margin_act = parseFloat(d.SM_Margin_Actual)  || G.sm_margin_act;
-      G.cracker_act   = parseFloat(d.Cracker_Margin_Act)|| G.cracker_act;
-      document.getElementById('update-time').textContent = '구글시트 주간 데이터';
-      document.getElementById('gs-date').textContent     = '';
-      // 대시보드 전체 갱신 + 슬라이더 초기화
+
+  fetchLatestCsvRow(
+    (d) => {
+      applyCsvRow(d);
       crackerUserEdited = false;
       updateDashboard();
       if (btn) {
@@ -2992,12 +2996,16 @@ function manualRefreshData() {
         setTimeout(() => { btn.textContent = '📡 시장가격 갱신'; }, 2000);
       }
     },
-    error() {
-      if (btn) { btn.textContent = '❌ 실패'; btn.disabled = false;
+    () => {
+      document.getElementById('update-time').textContent = 'CSV 로드 실패';
+      document.getElementById('gs-date').textContent = 'simulation_result.csv 확인 필요';
+      if (btn) {
+        btn.textContent = '❌ 실패';
+        btn.disabled = false;
         setTimeout(() => { btn.textContent = '📡 시장가격 갱신'; }, 2000);
       }
     }
-  });
+  );
 }
 
 function refreshImg() {
@@ -3747,6 +3755,41 @@ const CRACKER_HISTORY = [
   { week:'02/16', nap:612,  etP:705,  prP:777,  bdP:1270, bzP:898,  et:Math.round(705*0.32), pr:Math.round(777*0.16), bd:Math.round(1270*0.05),bz:Math.round(898*0.07), margin:-124 },
   { week:'02/23', nap:637,  etP:710,  prP:773,  bdP:1270, bzP:889,  et:Math.round(710*0.32), pr:Math.round(773*0.16), bd:Math.round(1270*0.05),bz:Math.round(889*0.07), margin:-156 },
 ];
+
+function syncCrackerHistoryWithLatest(d) {
+  const rawDate = textOr(d.GSheet_Date, '');
+  const weekLabel = rawDate
+    ? rawDate.replace(/^\d+-/, '').replace(/-/g, '/').slice(5)
+    : 'Latest';
+
+  const etP = numOr(d.ET_Actual, G.et);
+  const prP = numOr(d.PR_Actual, G.pr_act);
+  const bdP = numOr(d.BD_Actual, G.bd);
+  const bzP = numOr(d.BZ_Actual, G.bz);
+  const nap = numOr(d.NAP, G.nap);
+
+  const latestPoint = {
+    week: weekLabel,
+    nap,
+    etP,
+    prP,
+    bdP,
+    bzP,
+    et: Math.round(etP * CR_Y.et),
+    pr: Math.round(prP * CR_Y.pr),
+    bd: Math.round(bdP * CR_Y.bd),
+    bz: Math.round(bzP * CR_Y.bz),
+    margin: Math.round(calcCrackerMargin(etP, prP, bdP, bzP, nap))
+  };
+
+  const lastIdx = CRACKER_HISTORY.length - 1;
+  if (lastIdx >= 0 && CRACKER_HISTORY[lastIdx].week === weekLabel) {
+    CRACKER_HISTORY[lastIdx] = latestPoint;
+  } else {
+    CRACKER_HISTORY.push(latestPoint);
+    if (CRACKER_HISTORY.length > 10) CRACKER_HISTORY.shift();
+  }
+}
 
 let crackerHistChart = null;
 
