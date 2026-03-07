@@ -1,30 +1,30 @@
 # ============================================================
-# pip install pandas matplotlib numpy yfinance requests openpyxl
+# pip install pandas matplotlib numpy requests openpyxl yfinance
 # ============================================================
 # simulation.py - Iran Risk × ABS/SM 원가 대응 시뮬레이션
 # v6.4 - 나프타 크래커 마진 연동 BD 타이트 프리미엄 반영
 # ─────────────────────────────────────────────────────────────
-# 핵심 변경 (v6.3 → v6.4):
+# [v6.4 수정 이력]
+#   ★ BUG FIX: load_gsheet() 필터 조건 강화
+#     기존: WTI notna() 단일 조건 → 이란 시나리오 가상 데이터(행12 등)가
+#           실제 시황 데이터로 오인되어 NAP/WTI가 이란 가상값으로 업데이트되는 버그
+#     수정: WTI + NAP + ET + BZ + BD 5개 핵심 컬럼 모두 notna() 조건으로 강화
+#           → 구글시트에 날짜 수식(=A11+7)만 있고 실제 가격이 없는 행 완전 차단
 #
+# [핵심 변경 (v6.3 → v6.4 원본)]
 #   [추가] 나프타 크래커 마진 계산
-#     크래커마진 = ET×0.30 + PR×0.13 + BD×0.045 + BZ×0.06 - NAP
-#     기준마진 = 구글시트 최신 실측값 기반 동적 계산
+#     크래커마진 = ET×0.30 + PR×0.15 + BD×0.045 + BZ×0.06 - NAP - OPEX(50)
 #
 #   [BD 타이트 프리미엄]
 #     ET 약세 → 크래커마진 하락 → 가동률 하락 → BD 공급 감소 → BD 타이트
 #     BD_tight = min(max(0, -(크래커마진 - 기준마진)) × 0.5, 150)
-#     BD 보정값 = WTI 회귀값 + BD_tight
 #
 #   [수급 신호 4종 병기]
-#     1) SM Margin 실측 ($)  - SM 흑적자
-#     2) SM Margin 이론 ($)  - 이론 기준 흑적자 (메이커 감산 트리거)
-#     3) ABS Gap 실측 ($)    - 구매자 핵심 마진
-#     4) ABS Gap 이론 ($)    - 이론 기준 ABS 마진
-#     5) 크래커 마진 ($)     - BD/ET 수급 선행지표
-#
-#   [기존 유지]
-#     - 리스크 → NAP 민감도로 WTI 등가 → 전 원료 반영
-#     - ABS Cost = SM×0.60 + AN×0.25 + BD×0.15 직접 계산
+#     1) SM Margin 실측 ($)
+#     2) SM Margin 이론 ($)
+#     3) ABS Gap 실측 ($)
+#     4) ABS Gap 이론 ($)
+#     5) 크래커 마진 ($)
 # ============================================================
 
 import pandas as pd
@@ -138,7 +138,26 @@ def load_gsheet():
     df[date_col] = pd.to_datetime(df[date_col], errors='coerce')
     for col in df.columns[1:]:
         df[col] = pd.to_numeric(df[col], errors='coerce')
-    df = df[df[COL_MAP['wti']].notna()].copy()
+
+    # ★★★ BUG FIX (v6.4 수정) ★★★
+    # 기존: WTI notna() 단일 조건
+    #   → 구글시트에 이란 시나리오 가상 데이터(WTI=90.9, NAP=776 등)가 입력된 행이
+    #     WTI 조건만 통과하여 df.iloc[-1](최신 행)으로 선택됨
+    #   → 납사(NAP)를 포함한 전 원료가 이란 가상값으로 대시보드에 표시되는 버그 발생
+    #
+    # 수정: 핵심 5개 컬럼(WTI/NAP/ET/BZ/BD) 모두 실제 값이 있는 행만 통과
+    #   → 날짜 수식(=A11+7)만 있고 가격이 None인 미래 행 완전 차단
+    #   → 이란 시나리오처럼 일부 컬럼만 채워진 가상 데이터 행도 차단
+    required_cols = [
+        COL_MAP['wti'],   # WTI
+        COL_MAP['nap'],   # 납사 ← 핵심 수정 포인트
+        COL_MAP['et'],    # 에틸렌
+        COL_MAP['bz'],    # 벤젠
+        COL_MAP['bd'],    # 부타디엔
+    ]
+    df = df[df[required_cols].notna().all(axis=1)].copy()
+    # ★★★ BUG FIX END ★★★
+
     df = df.sort_values(date_col).reset_index(drop=True)
     if df.empty:
         print("[구글시트] 유효 데이터 없음")
