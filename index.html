@@ -192,6 +192,25 @@
       <div class="metric-card"><div class="text-xs text-slate-700 mb-1">BZ Korea-ARA</div><div id="c-bz-spread" class="text-lg font-black text-fuchsia-700">--</div><div class="text-xs text-slate-700">스프레드</div></div>
     </div>
 
+    <!-- Iran Premium 카드 -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+      <div class="metric-card border border-slate-300">
+        <div class="text-xs text-slate-700 mb-1 font-bold">Iran Premium (NAP)</div>
+        <div id="ip-nap" class="text-2xl font-black text-slate-700">$--</div>
+        <div id="ip-nap-sub" class="text-xs text-slate-600 mt-1">WTI 설명치 초과분</div>
+      </div>
+      <div class="metric-card border border-blue-300">
+        <div class="text-xs text-blue-700 mb-1 font-bold">Iran Premium (SM Cost)</div>
+        <div id="ip-sm" class="text-2xl font-black text-blue-700">$--</div>
+        <div id="ip-sm-sub" class="text-xs text-slate-600 mt-1">SM 실원가의 초과 상승분</div>
+      </div>
+      <div class="metric-card border border-emerald-300">
+        <div class="text-xs text-emerald-700 mb-1 font-bold">Iran Premium (ABS Gap)</div>
+        <div id="ip-abs" class="text-2xl font-black text-emerald-700">$--</div>
+        <div id="ip-abs-sub" class="text-xs text-slate-600 mt-1">ABS Gap의 추가 방어/훼손</div>
+      </div>
+    </div>
+
     <!-- 크래커 마진 패널 -->
     <div id="cracker-panel" class="rounded-xl p-4 mb-3 cracker-negative">
       <div class="flex flex-col md:flex-row md:items-center gap-4">
@@ -1281,13 +1300,16 @@ function showTab(id, btn) {
 // 앵커 상태 & 파라미터
 // ══════════════════════════════════════════════
 let G = {
-  wti_gs:90.9,
-  bz:967.7, et:870, bd:1500, an:1100, nap:776,
-  sm_act:1171, abs_mkt_act:1365, abs_gap_act:162.4, pr_act:920,
-  bz_ara_act:1031, bz_usg_mt_act:953.7,
-  sm_margin_act:116.4,  // CSV 로드 전 임시 기본값
-  cracker_act: -301.4,  // CSV 로드 전 임시 기본값
+  wti_gs:67.02,
+  bz:772, et:710, bd:1270, an:1315, nap:637,
+  sm_act:966, abs_mkt_act:1060, abs_gap_act:250, pr_act:870,
+  bz_ara_act:720, bz_usg_mt_act:680,
+  sm_margin_act:-1,  // v6.8: calcAll에서 sm-smCost로 직접계산, 이 값은 구글시트 fallback용
+  cracker_act: 0,  // 실측 크래커마진 (CSV 로드 후 갱신)
+  gs_date: '2026-03-06',
 };
+
+const BASE = JSON.parse(JSON.stringify(G));
 
 let SENS = {
   bz:16.81, et:6.13, bd:20.48, an:7.87, sm:14.75,
@@ -1313,80 +1335,74 @@ const CR_SPREAD = {et:300, pr:250, bd:450, bz:150};  // PR: +$200 → +$250 (업
 const fmt  = (v, sign=false) => isNaN(v)||v===null ? '--' : (sign&&v>=0?'+':'')+'$'+Math.round(v).toLocaleString();
 const fmtF = (v, d=1) => isNaN(v) ? '--' : v.toFixed(d);
 
-const numOr = (v, fallback) => {
-  const n = parseFloat(v);
-  return Number.isFinite(n) ? n : fallback;
-};
-const textOr = (v, fallback='') => (v === undefined || v === null || String(v).trim() === '') ? fallback : String(v).trim();
-
-function applyCsvRow(d) {
-  G.wti_gs        = numOr(d.WTI_GSheet, G.wti_gs);
-  G.bz            = numOr(d.BZ_Actual, G.bz);
-  G.et            = numOr(d.ET_Actual, G.et);
-  G.bd            = numOr(d.BD_Actual, G.bd);
-  G.an            = numOr(d.AN_Actual, G.an);
-  G.nap           = numOr(d.NAP, G.nap);
-  G.sm_act        = numOr(d.SM_Actual, G.sm_act);
-  G.abs_mkt_act   = numOr(d.ABS_Mkt_Actual, G.abs_mkt_act);
-  G.pr_act        = numOr(d.PR_Actual, G.pr_act);
-  G.bz_ara_act    = numOr(d.BZ_ARA_Actual, G.bz_ara_act);
-  G.bz_usg_mt_act = numOr(d.BZ_USG_Actual, numOr(d.BZ_USG_MT, G.bz_usg_mt_act));
-  G.sm_margin_act = numOr(d.SM_Margin_Actual, G.sm_margin_act);
-  G.cracker_act   = numOr(d.Cracker_Margin_Act, G.cracker_act);
-
-  if (Number.isFinite(parseFloat(d.ABS_Gap_Actual))) {
-    G.abs_gap_act = parseFloat(d.ABS_Gap_Actual);
-  } else if ([G.abs_mkt_act, G.sm_act, G.an, G.bd].every(Number.isFinite)) {
-    G.abs_gap_act = G.abs_mkt_act - (G.sm_act*0.60 + G.an*0.25 + G.bd*0.15);
-  }
-
-  if (d.NAP_Sens_Equiv_Basis) NAP_EQUIV = numOr(d.NAP_Sens_Equiv_Basis, NAP_EQUIV);
-
-  if (d.Sens_BZ)       { SENS.bz       = numOr(d.Sens_BZ, SENS.bz);             setSensCard('bz',      d.Sens_BZ,      d.R2_BZ); }
-  if (d.Sens_ET)       { SENS.et       = numOr(d.Sens_ET, SENS.et);             setSensCard('et',      d.Sens_ET,      d.R2_ET); }
-  if (d.Sens_SM)       { SENS.sm       = numOr(d.Sens_SM, SENS.sm);             setSensCard('sm',      d.Sens_SM,      d.R2_SM); }
-  if (d.Sens_BD)       { SENS.bd       = numOr(d.Sens_BD, SENS.bd);             setSensCard('bd',      d.Sens_BD,      d.R2_BD); }
-  if (d.Sens_AN)       { SENS.an       = numOr(d.Sens_AN, SENS.an);             setSensCard('an',      d.Sens_AN,      d.R2_AN); }
-  if (d.Sens_NAP)      { SENS.nap      = numOr(d.Sens_NAP, SENS.nap);           setSensCard('nap',     d.Sens_NAP,     d.R2_NAP); }
-  if (d.Sens_PR)       { SENS.pr       = numOr(d.Sens_PR, SENS.pr);             setSensCard('pr',      d.Sens_PR,      d.R2_PR); }
-  if (d.Sens_ABS_MKT)  { SENS.abs_mkt  = numOr(d.Sens_ABS_MKT, SENS.abs_mkt);   setSensCard('abs_mkt', d.Sens_ABS_MKT, d.R2_ABS_MKT); }
-  if (d.Sens_ABS_GAP)  { SENS.abs_gap  = numOr(d.Sens_ABS_GAP, SENS.abs_gap);   setSensCard('abs_gap', d.Sens_ABS_GAP, d.R2_ABS_GAP); }
-  if (d.Sens_SM_COST)  { SENS.sm_cost  = numOr(d.Sens_SM_COST, SENS.sm_cost);   setSensCard('sm_cost', d.Sens_SM_COST); }
-  if (d.Sens_SM_MARGIN){ SENS.sm_margin= numOr(d.Sens_SM_MARGIN, SENS.sm_margin); }
-
-  document.getElementById('update-time').textContent = textOr(d.UpdateTime, '구글시트 주간 데이터');
-  document.getElementById('gs-date').textContent = textOr(d.GSheet_Date, '');
-  if (d.Reg_N && document.getElementById('reg-meta')) {
-    document.getElementById('reg-meta').textContent = d.Reg_N + '주 데이터';
-  }
-
-  const etActualEl = document.getElementById('cr-et-actual');
-  const napActualEl = document.getElementById('cr-nap-actual');
-  if (etActualEl)  etActualEl.textContent  = `$${Math.round(G.et)}`;
-  if (napActualEl) napActualEl.textContent = `$${Math.round(G.nap)}`;
-
-  syncCrackerHistoryWithLatest(d);
-
-  if (!document.getElementById('tab-sens').classList.contains('hidden')) renderSensCharts();
+function parseYMD(s) {
+  if (!s) return null;
+  const m = String(s).match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return null;
+  return new Date(Date.UTC(parseInt(m[1],10), parseInt(m[2],10)-1, parseInt(m[3],10)));
 }
+function ymdUTC(dt) {
+  return dt ? dt.toISOString().slice(0,10) : '';
+}
+function addDaysUTC(dt, days) {
+  const d = new Date(dt.getTime());
+  d.setUTCDate(d.getUTCDate() + days);
+  return d;
+}
+function previousFridayUTC(dt) {
+  const d = new Date(dt.getTime());
+  while (d.getUTCDay() !== 5) d.setUTCDate(d.getUTCDate() - 1);
+  return d;
+}
+function inferBaseDateFromRow(d) {
+  const direct = parseYMD(d.GSheet_Date);
+  if (direct) return ymdUTC(direct);
+  const upd = parseYMD(d.UpdateTime);
+  if (upd) return ymdUTC(previousFridayUTC(upd));
+  return BASE.gs_date || '2026-03-06';
+}
+function isoWeekUTC(dt) {
+  const d = new Date(Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth(), dt.getUTCDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+  return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+}
+function getForecastBaseDate() {
+  return parseYMD(G.gs_date) ? G.gs_date : (BASE.gs_date || '2026-03-06');
+}
+function getFcBaseWeek() {
+  return isoWeekUTC(parseYMD(getForecastBaseDate()));
+}
+function getFcWeeks() {
+  const base = parseYMD(getForecastBaseDate());
+  const arr = [];
+  for (let n=1; n<=13; n++) {
+    const dt = addDaysUTC(base, 7*n);
+    arr.push({n, date: ymdUTC(dt), wn: isoWeekUTC(dt)});
+  }
+  return arr;
+}
+function calcIranPremiums() {
+  const dWti = G.wti_gs - BASE.wti_gs;
+  const fairNap = BASE.nap + dWti * SENS.nap;
+  const premNapRaw = G.nap - fairNap;
+  const premNap = Math.max(0, premNapRaw);
 
-function fetchLatestCsvRow(onSuccess, onError) {
-  Papa.parse('simulation_result.csv?t=' + Date.now(), {
-    download: true,
-    header: true,
-    skipEmptyLines: true,
-    complete(res) {
-      const rows = Array.isArray(res.data) ? res.data.filter(r => r && Object.values(r).some(v => String(v ?? '').trim() !== '')) : [];
-      if (!rows.length) {
-        if (onError) onError(new Error('CSV is empty'));
-        return;
-      }
-      onSuccess(rows[0]);
-    },
-    error(err) {
-      if (onError) onError(err || new Error('CSV parse failed'));
-    }
-  });
+  const fairEt = BASE.et + dWti * SENS.et;
+  const fairBz = BASE.bz + dWti * SENS.bz;
+  const fairSmCost = fairBz*SM_COST.bz + fairEt*SM_COST.et + fairNap*SM_COST.nap + SM_COST.fixed;
+  const actualSmCost = G.bz*SM_COST.bz + G.et*SM_COST.et + G.nap*SM_COST.nap + SM_COST.fixed;
+  const premSm = actualSmCost - fairSmCost;
+
+  const fairAbsGap = BASE.abs_gap_act + dWti * SENS.abs_gap;
+  const premAbs = G.abs_gap_act - fairAbsGap;
+
+  return {
+    fairNap, premNapRaw, premNap,
+    fairSmCost, actualSmCost, premSm,
+    fairAbsGap, premAbs,
+  };
 }
 
 function crackerColor(m) {
@@ -2895,6 +2911,26 @@ function updateDashboard() {
   document.getElementById('c-abs-mkt-act').textContent = `실측 $${Math.round(G.abs_mkt_act)}`;
   document.getElementById('c-bz-spread').textContent = fmt(rt.bzSpreadAra, true);
 
+  const ip = calcIranPremiums();
+  const ipNapEl = document.getElementById('ip-nap');
+  const ipSmEl  = document.getElementById('ip-sm');
+  const ipAbsEl = document.getElementById('ip-abs');
+  if (ipNapEl) {
+    ipNapEl.textContent = fmt(ip.premNap, true);
+    ipNapEl.className = 'text-2xl font-black ' + (ip.premNap > 0 ? 'text-red-700' : 'text-slate-700');
+    document.getElementById('ip-nap-sub').textContent = `Fair ${fmt(ip.fairNap)} vs Actual ${fmt(G.nap)}${ip.premNapRaw < 0 ? ' (WTI 설명치 이하)' : ''}`;
+  }
+  if (ipSmEl) {
+    ipSmEl.textContent = fmt(ip.premSm, true);
+    ipSmEl.className = 'text-2xl font-black ' + (ip.premSm >= 0 ? 'text-red-700' : 'text-blue-700');
+    document.getElementById('ip-sm-sub').textContent = `Fair ${fmt(ip.fairSmCost)} vs Actual ${fmt(ip.actualSmCost)}`;
+  }
+  if (ipAbsEl) {
+    ipAbsEl.textContent = fmt(ip.premAbs, true);
+    ipAbsEl.className = 'text-2xl font-black ' + (ip.premAbs >= 0 ? 'text-emerald-700' : 'text-red-700');
+    document.getElementById('ip-abs-sub').textContent = `Fair Gap ${fmt(ip.fairAbsGap, true)} vs Actual ${fmt(G.abs_gap_act, true)}`;
+  }
+
   // 크래커 마진 패널
   const panel = document.getElementById('cracker-panel');
   panel.className = 'rounded-xl p-4 mb-3 ' + crackerColor(rt.crackerSim);
@@ -2965,16 +3001,62 @@ function alertBadge(absGap) {
 }
 
 function loadCSV() {
-  fetchLatestCsvRow(
-    (d) => {
-      applyCsvRow(d);
+  Papa.parse('simulation_result.csv?t='+Date.now(), {
+    download:true, header:true, skipEmptyLines:true,
+    complete(res) {
+      if (!res.data?.length) return;
+      const d = res.data[0];
+
+      G.wti_gs        = parseFloat(d.WTI_GSheet)       || G.wti_gs;
+      G.bz            = parseFloat(d.BZ_Actual)        || G.bz;
+      G.et            = parseFloat(d.ET_Actual)        || G.et;
+      G.bd            = parseFloat(d.BD_Actual)        || G.bd;
+      G.an            = parseFloat(d.AN_Actual)        || G.an;
+      G.nap           = parseFloat(d.NAP)              || G.nap;
+      G.sm_act        = parseFloat(d.SM_Actual)        || G.sm_act;
+      G.abs_mkt_act   = parseFloat(d.ABS_Mkt_Actual)   || G.abs_mkt_act;
+      // abs_gap_act: 구글시트에 ABS_Gap_Actual 컬럼 있으면 사용, 없으면 실측 역산
+      if (d.ABS_Gap_Actual && parseFloat(d.ABS_Gap_Actual)) {
+        G.abs_gap_act = parseFloat(d.ABS_Gap_Actual);
+      } else if (G.abs_mkt_act && G.sm_act && G.an && G.bd) {
+        // ABS Gap = Mkt - (SM×0.60 + AN×0.25 + BD×0.15)
+        G.abs_gap_act = G.abs_mkt_act - (G.sm_act*0.60 + G.an*0.25 + G.bd*0.15);
+      }
+      G.pr_act        = parseFloat(d.PR_Actual)        || G.pr_act;
+      G.bz_ara_act    = parseFloat(d.BZ_ARA_Actual)    || G.bz_ara_act;
+      G.bz_usg_mt_act = parseFloat(d.BZ_USG_Actual)   || G.bz_usg_mt_act;
+      G.sm_margin_act = parseFloat(d.SM_Margin_Actual) || G.sm_margin_act;
+      G.cracker_act   = parseFloat(d.Cracker_Margin_Act)|| G.cracker_act;
+      G.gs_date       = inferBaseDateFromRow(d);
+
+      if (d.NAP_Sens_Equiv_Basis) NAP_EQUIV = parseFloat(d.NAP_Sens_Equiv_Basis) || NAP_EQUIV;
+
+      if (d.Sens_BZ)       { SENS.bz       = parseFloat(d.Sens_BZ);       setSensCard('bz',       d.Sens_BZ,       d.R2_BZ);       }
+      if (d.Sens_ET)       { SENS.et       = parseFloat(d.Sens_ET);       setSensCard('et',       d.Sens_ET,       d.R2_ET);       }
+      if (d.Sens_SM)       { SENS.sm       = parseFloat(d.Sens_SM);       setSensCard('sm',       d.Sens_SM,       d.R2_SM);       }
+      if (d.Sens_BD)       { SENS.bd       = parseFloat(d.Sens_BD);       setSensCard('bd',       d.Sens_BD,       d.R2_BD);       }
+      if (d.Sens_AN)       { SENS.an       = parseFloat(d.Sens_AN);       setSensCard('an',       d.Sens_AN,       d.R2_AN);       }
+      if (d.Sens_NAP)      { SENS.nap      = parseFloat(d.Sens_NAP);      setSensCard('nap',      d.Sens_NAP,      d.R2_NAP);      }
+      if (d.Sens_PR)       { SENS.pr       = parseFloat(d.Sens_PR);       setSensCard('pr',       d.Sens_PR,       d.R2_PR);       }
+      if (d.Sens_ABS_MKT)  { SENS.abs_mkt  = parseFloat(d.Sens_ABS_MKT);  setSensCard('abs_mkt',  d.Sens_ABS_MKT,  d.R2_ABS_MKT);  }
+      if (d.Sens_ABS_GAP)  { SENS.abs_gap  = parseFloat(d.Sens_ABS_GAP);  setSensCard('abs_gap',  d.Sens_ABS_GAP,  d.R2_ABS_GAP);  }
+      if (d.Sens_SM_COST)  { SENS.sm_cost  = parseFloat(d.Sens_SM_COST);  setSensCard('sm_cost',  d.Sens_SM_COST);                 }
+      // 민감도 탭이 활성화 상태면 차트 갱신
+      if (!document.getElementById('tab-sens').classList.contains('hidden')) renderSensCharts();
+      if (d.Sens_SM_MARGIN){ SENS.sm_margin= parseFloat(d.Sens_SM_MARGIN);}
+
+      document.getElementById('update-time').textContent = '구글시트 주간 데이터';
+      document.getElementById('gs-date').textContent     = `기준일 ${G.gs_date}`;
+      if (d.Reg_N) document.getElementById('reg-meta').textContent = d.Reg_N+'주 데이터';
+
+      // 크래커 슬라이더 실측값 라벨 갱신
+      document.getElementById('cr-et-actual').textContent  = `$${Math.round(G.et)}`;
+      document.getElementById('cr-nap-actual').textContent = `$${Math.round(G.nap)}`;
+
       updateDashboard();
     },
-    () => {
-      document.getElementById('update-time').textContent = 'CSV 로드 실패';
-      document.getElementById('gs-date').textContent = 'simulation_result.csv 확인 필요';
-    }
-  );
+    error() { document.getElementById('update-time').textContent = 'CSV 로드 실패'; }
+  });
 }
 
 // ── 수동 시장가격 갱신 (📡 버튼용) — 전체 데이터 갱신 후 슬라이더 초기화
@@ -2984,10 +3066,38 @@ function manualRefreshData() {
     btn.textContent = '⏳ 갱신 중...';
     btn.disabled = true;
   }
-
-  fetchLatestCsvRow(
-    (d) => {
-      applyCsvRow(d);
+  Papa.parse('simulation_result.csv?t='+Date.now(), {
+    download:true, header:true, skipEmptyLines:true,
+    complete(res) {
+      if (!res.data?.length) {
+        if (btn) { btn.textContent = '❌ 실패'; btn.disabled = false; }
+        return;
+      }
+      const d = res.data[0];
+      // 전체 주간가격 갱신
+      G.wti_gs        = parseFloat(d.WTI_GSheet)        || G.wti_gs;
+      G.bz            = parseFloat(d.BZ_Actual)         || G.bz;
+      G.et            = parseFloat(d.ET_Actual)         || G.et;
+      G.bd            = parseFloat(d.BD_Actual)         || G.bd;
+      G.an            = parseFloat(d.AN_Actual)         || G.an;
+      G.nap           = parseFloat(d.NAP)               || G.nap;
+      G.sm_act        = parseFloat(d.SM_Actual)         || G.sm_act;
+      G.abs_mkt_act   = parseFloat(d.ABS_Mkt_Actual)    || G.abs_mkt_act;
+      // abs_gap_act: 구글시트에 ABS_Gap_Actual 컬럼 있으면 사용, 없으면 실측 역산
+      if (d.ABS_Gap_Actual && parseFloat(d.ABS_Gap_Actual)) {
+        G.abs_gap_act = parseFloat(d.ABS_Gap_Actual);
+      } else if (G.abs_mkt_act && G.sm_act && G.an && G.bd) {
+        G.abs_gap_act = G.abs_mkt_act - (G.sm_act*0.60 + G.an*0.25 + G.bd*0.15);
+      }
+      G.pr_act        = parseFloat(d.PR_Actual)         || G.pr_act;
+      G.bz_ara_act    = parseFloat(d.BZ_ARA_Actual)     || G.bz_ara_act;
+      G.bz_usg_mt_act = parseFloat(d.BZ_USG_Actual)    || G.bz_usg_mt_act;
+      G.sm_margin_act = parseFloat(d.SM_Margin_Actual)  || G.sm_margin_act;
+      G.cracker_act   = parseFloat(d.Cracker_Margin_Act)|| G.cracker_act;
+      G.gs_date       = inferBaseDateFromRow(d);
+      document.getElementById('update-time').textContent = '구글시트 주간 데이터';
+      document.getElementById('gs-date').textContent     = `기준일 ${G.gs_date}`;
+      // 대시보드 전체 갱신 + 슬라이더 초기화
       crackerUserEdited = false;
       updateDashboard();
       if (btn) {
@@ -2996,16 +3106,12 @@ function manualRefreshData() {
         setTimeout(() => { btn.textContent = '📡 시장가격 갱신'; }, 2000);
       }
     },
-    () => {
-      document.getElementById('update-time').textContent = 'CSV 로드 실패';
-      document.getElementById('gs-date').textContent = 'simulation_result.csv 확인 필요';
-      if (btn) {
-        btn.textContent = '❌ 실패';
-        btn.disabled = false;
+    error() {
+      if (btn) { btn.textContent = '❌ 실패'; btn.disabled = false;
         setTimeout(() => { btn.textContent = '📡 시장가격 갱신'; }, 2000);
       }
     }
-  );
+  });
 }
 
 function refreshImg() {
@@ -3029,27 +3135,7 @@ const FC_SENS = {SM: 14.747, AN: 7.873, BD: 20.476};
 // 잔차 표준편차
 const FC_STD  = {SM: 52.62,  AN: 52.58,  BD: 149.25};
 
-// 예측 기준 주차 (W09 = 2/27 기준)
-const FC_BASE_WEEK = 9;
-// 예측 13주 정보
-const FC_WEEKS = [
-  {n:1,  date:'2026-03-06', wn:10},
-  {n:2,  date:'2026-03-13', wn:11},
-  {n:3,  date:'2026-03-20', wn:12},
-  {n:4,  date:'2026-03-27', wn:13},
-  {n:5,  date:'2026-04-03', wn:14},
-  {n:6,  date:'2026-04-10', wn:15},
-  {n:7,  date:'2026-04-17', wn:16},
-  {n:8,  date:'2026-04-24', wn:17},
-  {n:9,  date:'2026-05-01', wn:18},
-  {n:10, date:'2026-05-08', wn:19},
-  {n:11, date:'2026-05-15', wn:20},
-  {n:12, date:'2026-05-22', wn:21},
-  {n:13, date:'2026-05-29', wn:22},
-];
-
-// 현재 WTI 시나리오 모드
-let fcMode = 'flat';
+// 예측 기준 주차/날짜는 CSV 기준일(G.gs_date)로 자동 롤링
 let fcCustomWti = {mar:67, apr:67, may:67};
 
 // WTI 경로 반환 (n=1~13)
@@ -3094,9 +3180,9 @@ function renderForecast() {
   const curWTI= G.wti_gs;  // 사전원가 기준: 주간가
 
   // 현재 주차 계절성
-  const s0_SM = SEASONAL.SM[FC_BASE_WEEK] || 0;
-  const s0_AN = SEASONAL.AN[FC_BASE_WEEK] || 0;
-  const s0_BD = SEASONAL.BD[FC_BASE_WEEK] || 0;
+  const s0_SM = SEASONAL.SM[getFcBaseWeek()] || 0;
+  const s0_AN = SEASONAL.AN[getFcBaseWeek()] || 0;
+  const s0_BD = SEASONAL.BD[getFcBaseWeek()] || 0;
 
   // 현재가 표시 갱신
   document.getElementById('fc-cur-sm').textContent = `$${Math.round(curSM)}`;
@@ -3105,7 +3191,7 @@ function renderForecast() {
 
   // ─── SM 테이블 ───
   let smRows = ''; let prevSM = curSM;
-  FC_WEEKS.forEach(w => {
+  getFcWeeks().forEach(w => {
     const wti    = getFcWti(w.n);
     const dWti   = wti - curWTI;
     const seas   = (SEASONAL.SM[w.wn] || 0) - s0_SM;
@@ -3137,7 +3223,7 @@ function renderForecast() {
 
   // ─── AN 테이블 ───
   let anRows = ''; let prevAN = G.an;
-  FC_WEEKS.forEach(w => {
+  getFcWeeks().forEach(w => {
     const wti    = getFcWti(w.n);
     const dWti   = wti - curWTI;
     const seas   = (SEASONAL.AN[w.wn] || 0) - s0_AN;
@@ -3169,7 +3255,7 @@ function renderForecast() {
 
   // ─── BD 테이블 (크래커 타이트 병기) ───
   let bdRows = ''; let prevBD = curBD;
-  FC_WEEKS.forEach(w => {
+  getFcWeeks().forEach(w => {
     const wti      = getFcWti(w.n);
     const dWti     = wti - curWTI;
     const seas     = (SEASONAL.BD[w.wn] || 0) - s0_BD;
@@ -3211,12 +3297,12 @@ function renderForecast() {
 
 function renderFcInsight(curSM, curWTI) {
   // W+1, W+4(3월말), W+8(4월말), W+13(5월말) 예측값 요약
-  const s0_SM = SEASONAL.SM[FC_BASE_WEEK]||0;
-  const s0_AN = SEASONAL.AN[FC_BASE_WEEK]||0;
-  const s0_BD = SEASONAL.BD[FC_BASE_WEEK]||0;
+  const s0_SM = SEASONAL.SM[getFcBaseWeek()]||0;
+  const s0_AN = SEASONAL.AN[getFcBaseWeek()]||0;
+  const s0_BD = SEASONAL.BD[getFcBaseWeek()]||0;
 
   const summary = [1,4,8,13].map(n => {
-    const w    = FC_WEEKS[n-1];
+    const w    = getFcWeeks()[n-1];
     const wti  = getFcWti(n);
     const dWti = wti - curWTI;
     return {
@@ -3295,9 +3381,9 @@ function renderFcChart() {
 
   const curWTI = G.wti_gs;
   const s0 = {
-    SM: SEASONAL.SM[FC_BASE_WEEK]||0,
-    AN: SEASONAL.AN[FC_BASE_WEEK]||0,
-    BD: SEASONAL.BD[FC_BASE_WEEK]||0,
+    SM: SEASONAL.SM[getFcBaseWeek()]||0,
+    AN: SEASONAL.AN[getFcBaseWeek()]||0,
+    BD: SEASONAL.BD[getFcBaseWeek()]||0,
   };
   const curPrices = {SM: G.sm_act, AN: G.an, BD: G.bd};
   const colors = {
@@ -3307,7 +3393,7 @@ function renderFcChart() {
   };
 
   // 라벨: W(현재) + W+1~W+13
-  const labels = ['W(현재)', ...FC_WEEKS.map(w => `W+${w.n}\n${w.date.slice(5)}`)];
+  const labels = ['W(현재)', ...getFcWeeks().map(w => `W+${w.n}\n${w.date.slice(5)}`)];
 
   const datasets = [];
 
@@ -3324,7 +3410,7 @@ function renderFcChart() {
     const seas  = [curPrices[label]];
     const flat  = [curPrices[label]];  // Flat 기준선 (WTI 고정)
 
-    FC_WEEKS.forEach(w => {
+    getFcWeeks().forEach(w => {
       const wti   = getFcWti(w.n);
       const dWti  = wti - curWTI;
       let seasDelta = (SEASONAL[label][w.wn]||0) - s0[label];
@@ -3756,41 +3842,6 @@ const CRACKER_HISTORY = [
   { week:'02/23', nap:637,  etP:710,  prP:773,  bdP:1270, bzP:889,  et:Math.round(710*0.32), pr:Math.round(773*0.16), bd:Math.round(1270*0.05),bz:Math.round(889*0.07), margin:-156 },
 ];
 
-function syncCrackerHistoryWithLatest(d) {
-  const rawDate = textOr(d.GSheet_Date, '');
-  const weekLabel = rawDate
-    ? rawDate.replace(/^\d+-/, '').replace(/-/g, '/').slice(5)
-    : 'Latest';
-
-  const etP = numOr(d.ET_Actual, G.et);
-  const prP = numOr(d.PR_Actual, G.pr_act);
-  const bdP = numOr(d.BD_Actual, G.bd);
-  const bzP = numOr(d.BZ_Actual, G.bz);
-  const nap = numOr(d.NAP, G.nap);
-
-  const latestPoint = {
-    week: weekLabel,
-    nap,
-    etP,
-    prP,
-    bdP,
-    bzP,
-    et: Math.round(etP * CR_Y.et),
-    pr: Math.round(prP * CR_Y.pr),
-    bd: Math.round(bdP * CR_Y.bd),
-    bz: Math.round(bzP * CR_Y.bz),
-    margin: Math.round(calcCrackerMargin(etP, prP, bdP, bzP, nap))
-  };
-
-  const lastIdx = CRACKER_HISTORY.length - 1;
-  if (lastIdx >= 0 && CRACKER_HISTORY[lastIdx].week === weekLabel) {
-    CRACKER_HISTORY[lastIdx] = latestPoint;
-  } else {
-    CRACKER_HISTORY.push(latestPoint);
-    if (CRACKER_HISTORY.length > 10) CRACKER_HISTORY.shift();
-  }
-}
-
 let crackerHistChart = null;
 
 function renderCrackerHistoryChart(focusItem) {
@@ -4150,11 +4201,11 @@ async function saveForecastToSheet() {
   const curAN  = G.an;
   const curBD  = G.bd;
   const curWTI = G.wti_gs;
-  const s0_SM  = SEASONAL.SM[FC_BASE_WEEK] || 0;
-  const s0_AN  = SEASONAL.AN[FC_BASE_WEEK] || 0;
-  const s0_BD  = SEASONAL.BD[FC_BASE_WEEK] || 0;
+  const s0_SM  = SEASONAL.SM[getFcBaseWeek()] || 0;
+  const s0_AN  = SEASONAL.AN[getFcBaseWeek()] || 0;
+  const s0_BD  = SEASONAL.BD[getFcBaseWeek()] || 0;
 
-  const rows = FC_WEEKS.map(w => {
+  const rows = getFcWeeks().map(w => {
     const wti  = getFcWti(w.n);
     const dWti = wti - curWTI;
     const sm   = Math.round(curSM + dWti * FC_SENS.SM + (SEASONAL.SM[w.wn]||0) - s0_SM);
