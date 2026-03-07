@@ -3174,8 +3174,9 @@ function onFcCustom() {
 }
 
 function renderForecast() {
+  try {
   const curSM = G.sm_act;
-  const curAN = G.abs_mkt_act;  // AN 실측 (CSV 로드 후 갱신)
+  const curAN = G.an;  // AN 실측 (CSV 로드 후 갱신)
   const curBD = G.bd;
   const curWTI= G.wti_gs;  // 사전원가 기준: 주간가
 
@@ -3186,7 +3187,7 @@ function renderForecast() {
 
   // 현재가 표시 갱신
   document.getElementById('fc-cur-sm').textContent = `$${Math.round(curSM)}`;
-  document.getElementById('fc-cur-an').textContent = `$${Math.round(G.an)}`;
+  document.getElementById('fc-cur-an').textContent = `$${Math.round(curAN)}`;
   document.getElementById('fc-cur-bd').textContent = `$${Math.round(curBD)}`;
 
   // ─── SM 테이블 ───
@@ -3293,7 +3294,10 @@ function renderForecast() {
 
   // ─── 인사이트 요약 ───
   renderFcInsight(curSM, curWTI);
+  // ─── 그래프도 함께 렌더 ───
+  renderFcChart();
 }
+
 
 function renderFcInsight(curSM, curWTI) {
   // W+1, W+4(3월말), W+8(4월말), W+13(5월말) 예측값 요약
