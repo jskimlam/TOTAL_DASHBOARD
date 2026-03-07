@@ -104,7 +104,6 @@
       <div class="hdr-right text-right text-xs text-slate-300 space-y-0.5 shrink-0">
         <div id="update-time">구글시트 주간 데이터</div>
         <div id="gs-date" class="text-yellow-600"></div>
-        <div id="wti-source"></div>
       </div>
     </div>
 
@@ -114,7 +113,6 @@
       <div class="rounded-xl bg-white/10 border border-yellow-400/30 p-2.5 text-center backdrop-blur-sm">
         <div class="text-xs text-yellow-200 font-semibold mb-1">WTI <span class="text-yellow-400/60 text-[10px]">주간</span></div>
         <div id="hdr-wti" class="text-2xl font-black text-yellow-300">$--</div>
-        <div class="text-[10px] text-yellow-200/50 mt-0.5">EIA <span id="hdr-wti-eia" class="text-yellow-200/70">$--</span></div>
       </div>
       <!-- 크래커마진 -->
       <div class="rounded-xl bg-white/10 border border-slate-400/30 p-2.5 text-center backdrop-blur-sm">
@@ -182,7 +180,7 @@
   <div id="tab-main">
     <!-- 원료 카드 -->
     <div class="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-10 gap-2 mb-3">
-      <div class="metric-card"><div class="text-xs text-slate-700 mb-1">WTI <span class="text-slate-400">(주간)</span></div><div id="c-wti" class="text-lg font-black text-amber-700">--</div><div class="text-xs text-slate-400">EIA: <span id="c-wti-eia">$--</span></div></div>
+      <div class="metric-card"><div class="text-xs text-slate-700 mb-1">WTI <span class="text-slate-400">(주간)</span></div><div id="c-wti" class="text-lg font-black text-amber-700">--</div><div class="text-xs text-slate-400">$/bbl</div></div>
       <div class="metric-card"><div class="text-xs text-slate-700 mb-1">NAP</div><div id="c-nap" class="text-lg font-black text-slate-700">--</div><div class="text-xs text-slate-700">$/mt</div></div>
       <div class="metric-card"><div class="text-xs text-slate-700 mb-1">BZ</div><div id="c-bz" class="text-lg font-black text-purple-700">--</div><div id="c-bz-act" class="text-xs text-slate-700">실측 $---</div></div>
       <div class="metric-card border border-green-200"><div class="text-xs text-green-700 mb-1 font-bold">ET ★</div><div id="c-et" class="text-lg font-black text-green-700">--</div><div id="c-et-act" class="text-xs text-slate-700">실측 $---</div></div>
@@ -586,7 +584,7 @@
           <span>ABS Cost: <b class="text-slate-800">+$13.89/bbl</b></span>
           <span class="text-amber-700 font-bold">★ WTI↑ → Gap 축소 (전가 지연)</span>
         </div>
-        <!-- 현재 WTI 기준 예측값 실시간 표시 -->
+        <!-- 현재 WTI 기준 예측값 -->
         <div class="mt-2 flex items-center gap-2 text-[10px] border-t border-amber-200 pt-2">
           <span class="text-slate-500">현재 WTI 기준 회귀 예측 Gap:</span>
           <span id="ref-gap-pred" class="font-black text-slate-800">$--</span>
@@ -1254,7 +1252,7 @@
   </div>
 
   <footer class="text-center text-slate-700 text-xs pb-4">
-    LAM Advanced Procurement  |  v6.8  |  SM/ABS 가격탄성 비대칭 적용(Mkt=WTI만 반응, 이란리스크=Cost만 반영)  |  30초 자동갱신
+    LAM Advanced Procurement  |  v6.9  |  SM/ABS 가격탄성 비대칭 적용  |  주간 업데이트 기준
   </footer>
 </div>
 
@@ -1283,7 +1281,7 @@ function showTab(id, btn) {
 // 앵커 상태 & 파라미터
 // ══════════════════════════════════════════════
 let G = {
-  wti_gs:67.02, wti_rt:67.02,
+  wti_gs:67.02,
   bz:772, et:710, bd:1270, an:1315, nap:637,
   sm_act:966, abs_mkt_act:1060, abs_gap_act:250, pr_act:870,
   bz_ara_act:720, bz_usg_mt_act:680,
@@ -1554,15 +1552,15 @@ function onWtiSlider() {
 }
 
 function setWtiScenario(wti, risk) {
-  wtiUserEdited = true;  // 시나리오 버튼도 명시적 조작으로 간주 → 30초 자동갱신 차단
+  wtiUserEdited = true;  // 시나리오 버튼도 명시적 조작으로 간주
   document.getElementById('slider-wti').value  = wti;
   document.getElementById('slider-risk').value = risk;
   onWtiSlider();
 }
 
-// WTI 슬라이더를 실시간 야후 WTI로 초기화 + 자동갱신 재개
+// WTI 슬라이더를 주간가로 초기화
 function resetWtiSlider() {
-  wtiUserEdited = false;  // 플래그 해제 → 30초 자동갱신 재개
+  wtiUserEdited = false;
   document.getElementById('slider-wti').value  = G.wti_gs.toFixed(2);  // 슬라이더 기준: 주간가
   document.getElementById('slider-risk').value = 0;
   onWtiSlider();
@@ -1627,7 +1625,7 @@ function renderWtiChart() {
   const risk = parseFloat(document.getElementById('slider-risk').value);
   const r    = calcAll(wti, risk);
 
-  // 5개 시나리오 (Base는 항상 G.wti_rt 기준)
+  // 5개 시나리오 (Base는 항상 G.wti_gs 기준)
   const SCENS = [
     { label: 'Base $'+Math.round(G.wti_gs), wti: G.wti_gs, risk: 0,   color: '#10b981' },
     { label: 'Mild $70',                     wti: 70,        risk: 50,  color: '#f59e0b' },
@@ -2225,8 +2223,7 @@ function buildMarginExplain(margin, et, pr, bd, bz, nap, targets, etC, prC, bdC,
 // ══════════════════════════════════════════════
 // 시나리오 테이블
 // ══════════════════════════════════════════════
-// v6.8: Base WTI를 G.wti_rt(야후 실시간)로 동적 참조
-// SCENARIOS는 함수로 래핑해서 호출 시점에 G.wti_rt 반영
+// SCENARIOS — 주간가 기준
 function getScenarios() {
   return [
     {label:`Base $${Math.round(G.wti_gs)}`, wti:G.wti_gs, risk:0,   color:'#10b981'},
@@ -2789,8 +2786,7 @@ function updateDashboard() {
 
   // 헤더 KPI
   document.getElementById('hdr-wti').textContent    = `$${G.wti_gs.toFixed(2)}`;  // 주간가 기준
-  document.getElementById('hdr-wti-eia').textContent = `$${G.wti_rt.toFixed(2)}`;  // EIA 참고
-  // Flat 버튼 레이블 실시간 WTI 반영
+  // Flat 버튼 레이블 WTI 반영
   const flatLabel = document.getElementById('fc-flat-wti-label');
   if (flatLabel) flatLabel.textContent = `$${G.wti_gs.toFixed(1)}`;  // Flat 기준: 주간가
   const cmEl = document.getElementById('hdr-cracker');
@@ -2807,7 +2803,6 @@ function updateDashboard() {
 
   // 원료 카드
   document.getElementById('c-wti').textContent       = `$${G.wti_gs.toFixed(2)}`;  // 주간가
-  document.getElementById('c-wti-eia').textContent   = `$${G.wti_rt.toFixed(2)}`;  // EIA 참고
   document.getElementById('c-nap').textContent       = `$${Math.round(rt.nap)}`;
   document.getElementById('c-bz').textContent        = fmt(rt.bz);
   document.getElementById('c-bz-act').textContent    = `실측 $${Math.round(G.bz)}`;
@@ -2900,7 +2895,6 @@ function loadCSV() {
       if (!res.data?.length) return;
       const d = res.data[0];
 
-      G.wti_rt        = parseFloat(d.WTI)              || G.wti_rt;
       G.wti_gs        = parseFloat(d.WTI_GSheet)       || G.wti_gs;
       G.bz            = parseFloat(d.BZ_Actual)        || G.bz;
       G.et            = parseFloat(d.ET_Actual)        || G.et;
@@ -2940,7 +2934,6 @@ function loadCSV() {
 
       document.getElementById('update-time').textContent = '구글시트 주간 데이터';
       document.getElementById('gs-date').textContent     = '';
-      document.getElementById('wti-source').textContent  = '';
       if (d.Reg_N) document.getElementById('reg-meta').textContent = d.Reg_N+'주 데이터';
 
       // 크래커 슬라이더 실측값 라벨 갱신
@@ -2969,7 +2962,6 @@ function manualRefreshData() {
       }
       const d = res.data[0];
       // 전체 주간가격 갱신
-      G.wti_rt        = parseFloat(d.WTI)               || G.wti_rt;
       G.wti_gs        = parseFloat(d.WTI_GSheet)        || G.wti_gs;
       G.bz            = parseFloat(d.BZ_Actual)         || G.bz;
       G.et            = parseFloat(d.ET_Actual)         || G.et;
@@ -3007,58 +2999,6 @@ function manualRefreshData() {
     }
   });
 }
-
-// ── WTI만 갱신 (30초 interval용) — GAS 프록시 방식 (CORS 완전 우회)
-// WTI — 구글시트 주간 업데이트 기반
-// WTI 갱신 — Finnhub 브라우저 직접 호출 (GAS 불필요, CORS 허용)
-const FINNHUB_KEY = 'd6igkr1r01qm7dc7ej90d6igkr1r01qm7dc7ej9g';
-
-async function _fetchWTI() {
-  // 심볼명을 OANDA:WTICO_USD 로 수정
-  const url = 'https://finnhub.io/api/v1/quote?symbol=OANDA:WTICO_USD&token=' + FINNHUB_KEY;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error('Finnhub HTTP ' + res.status);
-  const d = await res.json();
-  if (!d.c || d.c <= 0) throw new Error('Finnhub 가격 없음: ' + JSON.stringify(d));
-  const kst = new Date(d.t * 1000).toLocaleString('ko-KR', {timeZone:'Asia/Seoul'});
-  return { wti: d.c, time: kst };
-}
-
-// WTI 갱신 실패 시 5초 후 1회 재시도
-async function loadWTIOnly() {
-  let data = null;
-  try {
-    data = await _fetchWTI();
-  } catch (e1) {
-    console.warn('[WTI 1차 실패] 5초 후 재시도:', e1.message);
-    try {
-      await new Promise(r => setTimeout(r, 5000));
-      data = await _fetchWTI();
-    } catch (e2) {
-      console.warn('[WTI 2차 실패] 갱신 포기:', e2.message);
-      return;
-    }
-  }
-
-  const newWti = parseFloat(data.wti);
-  if (isNaN(newWti) || newWti <= 0) return;
-
-  if (Math.abs(newWti - G.wti_rt) < 0.001) return;
-
-  G.wti_rt = newWti;
-
-  if (data.time) {
-    // WTI 자동갱신 비활성화
-  }
-
-  const btnBase = document.getElementById('btn-base-wti');
-  if (btnBase) btnBase.textContent = `Base $${Math.round(G.wti_gs)}`;  // 주간가 기준
-
-  if (wtiUserEdited) return;
-  document.getElementById('slider-wti').value = G.wti_rt.toFixed(2);
-  onWtiSlider();
-}
-
 
 function refreshImg() {
   document.getElementById('report-img').src = 'risk_simulation_report.png?t='+Date.now();
@@ -3345,7 +3285,7 @@ function renderFcChart() {
   const showPrice   = document.getElementById('fc-show-price')?.checked ?? true;
   const showFlat    = document.getElementById('fc-show-flat')?.checked ?? true;
 
-  const curWTI = G.wti_rt;
+  const curWTI = G.wti_gs;
   const s0 = {
     SM: SEASONAL.SM[FC_BASE_WEEK]||0,
     AN: SEASONAL.AN[FC_BASE_WEEK]||0,
@@ -3583,7 +3523,7 @@ function renderSensHeatmap() {
     const sensCell = `<td class="px-3 py-2 text-center font-black border border-slate-200" style="color:${item.color}">${s >= 0 ? '+' : ''}$${s.toFixed(2)}</td>`;
     // 현재 WTI 기준 각 구간 가격
     const priceCells = wtiRange.map(w => {
-      const dWti = w - G.wti_rt;
+      const dWti = w - G.wti_gs;
       const price = Math.round((G[item.key] || 0) + dWti * s);
       // 색상 강도: 민감도 높을수록 진하게
       const intensity = Math.min(1, s / maxSens);
@@ -3687,7 +3627,7 @@ function renderSensR2Gauges() {
 
 // ABS 원가 계산 헬퍼 (민감도 Before/After 공용)
 function calcAbsCost(sens, w) {
-  const dWti = w - G.wti_rt;
+  const dWti = w - G.wti_gs;
   const smC  = (G.sm_act + dWti * sens.sm) * ABS_R.sm;
   const anC  = (G.an     + dWti * sens.an) * ABS_R.an;
   const bdC  = (G.bd     + dWti * sens.bd) * ABS_R.bd;
@@ -4146,9 +4086,6 @@ updateDashboard();
 // 최초 전체 데이터 로드 (주간가격 + WTI)
 loadCSV();
 
-// ★ 30초마다 OANDA 실시간 WTI 유가 자동 갱신 ★
-setInterval(loadWTIOnly, 30000);
-
 // 리포트 이미지 5분마다 갱신
 setInterval(refreshImg, 300000);
 
@@ -4169,7 +4106,7 @@ async function saveForecastToSheet() {
   const curSM  = G.sm_act;
   const curAN  = G.an;
   const curBD  = G.bd;
-  const curWTI = G.wti_rt;
+  const curWTI = G.wti_gs;
   const s0_SM  = SEASONAL.SM[FC_BASE_WEEK] || 0;
   const s0_AN  = SEASONAL.AN[FC_BASE_WEEK] || 0;
   const s0_BD  = SEASONAL.BD[FC_BASE_WEEK] || 0;
