@@ -1098,22 +1098,34 @@
 
       <!-- WTI 경로 슬라이더 (Custom 모드) -->
       <div id="fc-custom-panel" class="hidden bg-slate-50 border border-slate-200 rounded-xl p-4">
-        <div class="text-xs text-slate-700 font-bold mb-3">Custom WTI 경로 (13주)</div>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="flex items-center justify-between gap-3 mb-3">
+          <div class="text-xs text-slate-700 font-bold">Custom WTI 경로 (13주)</div>
+          <button onclick="resetFcCustomToCurrentPrice()" class="text-xs bg-slate-700 hover:bg-slate-800 text-white font-bold px-3 py-1.5 rounded-lg transition">🔄 현재가로 복원</button>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
           <div>
-            <div class="flex justify-between text-xs mb-1"><span class="text-slate-700">W+1~4 (3월)</span><span id="fc-wti-mar" class="text-amber-700 font-bold">$67</span></div>
-            <input type="range" id="fc-slider-mar" min="50" max="100" step="0.5" value="67" class="w-full" oninput="onFcCustom()">
+            <div class="flex justify-between text-xs mb-1"><span class="text-slate-700">W+1~4 (3월)</span><span id="fc-wti-mar" class="text-amber-700 font-bold">$90.9</span></div>
+            <div class="flex items-center gap-2">
+              <input type="range" id="fc-slider-mar" min="50" max="120" step="0.5" value="90.9" class="w-full" oninput="onFcCustomFromSlider('mar')">
+              <input type="number" id="fc-input-mar" min="50" max="120" step="0.5" value="90.9" class="w-20 rounded border border-slate-300 px-2 py-1 text-sm text-right" oninput="onFcCustomFromInput('mar')">
+            </div>
           </div>
           <div>
-            <div class="flex justify-between text-xs mb-1"><span class="text-slate-700">W+5~8 (4월)</span><span id="fc-wti-apr" class="text-amber-700 font-bold">$67</span></div>
-            <input type="range" id="fc-slider-apr" min="50" max="100" step="0.5" value="67" class="w-full" oninput="onFcCustom()">
+            <div class="flex justify-between text-xs mb-1"><span class="text-slate-700">W+5~8 (4월)</span><span id="fc-wti-apr" class="text-amber-700 font-bold">$90.9</span></div>
+            <div class="flex items-center gap-2">
+              <input type="range" id="fc-slider-apr" min="50" max="120" step="0.5" value="90.9" class="w-full" oninput="onFcCustomFromSlider('apr')">
+              <input type="number" id="fc-input-apr" min="50" max="120" step="0.5" value="90.9" class="w-20 rounded border border-slate-300 px-2 py-1 text-sm text-right" oninput="onFcCustomFromInput('apr')">
+            </div>
           </div>
           <div>
-            <div class="flex justify-between text-xs mb-1"><span class="text-slate-700">W+9~13 (5월)</span><span id="fc-wti-may" class="text-amber-700 font-bold">$67</span></div>
-            <input type="range" id="fc-slider-may" min="50" max="100" step="0.5" value="67" class="w-full" oninput="onFcCustom()">
+            <div class="flex justify-between text-xs mb-1"><span class="text-slate-700">W+9~13 (5월)</span><span id="fc-wti-may" class="text-amber-700 font-bold">$90.9</span></div>
+            <div class="flex items-center gap-2">
+              <input type="range" id="fc-slider-may" min="50" max="120" step="0.5" value="90.9" class="w-full" oninput="onFcCustomFromSlider('may')">
+              <input type="number" id="fc-input-may" min="50" max="120" step="0.5" value="90.9" class="w-20 rounded border border-slate-300 px-2 py-1 text-sm text-right" oninput="onFcCustomFromInput('may')">
+            </div>
           </div>
           <div class="flex items-center">
-            <div class="text-xs text-slate-700">WTI 경로별 3~5월 구간 독립 설정</div>
+            <div class="text-xs text-slate-700">WTI 경로별 3~5월 구간 독립 설정<br><span class="text-slate-500">슬라이더 또는 숫자 직접 입력 가능</span></div>
           </div>
         </div>
       </div>
@@ -3137,21 +3149,55 @@ const FC_STD  = {SM: 52.62,  AN: 52.58,  BD: 149.25};
 
 // 예측 기준 주차/날짜는 CSV 기준일(G.gs_date)로 자동 롤링
 let fcMode = 'flat';
-let fcCustomWti = {mar:67, apr:67, may:67};
+let fcCustomWti = {mar:90.9, apr:90.9, may:90.9};
+
+
+function syncFcCustomControls() {
+  ['mar','apr','may'].forEach(k => {
+    const v = Number(fcCustomWti[k] ?? G.wti_gs ?? 90.9);
+    const slider = document.getElementById(`fc-slider-${k}`);
+    const input = document.getElementById(`fc-input-${k}`);
+    const label = document.getElementById(`fc-wti-${k}`);
+    if (slider) slider.value = v;
+    if (input) input.value = v.toFixed(1);
+    if (label) label.textContent = `$${v.toFixed(1)}`;
+  });
+}
+
+function resetFcCustomToCurrentScenario() {
+  const base = Number(G.wti_gs || G.wti || 90.9);
+  fcCustomWti.mar = Number(getFcWtiByMode('custom_seed', 1, base).toFixed(1));
+  fcCustomWti.apr = Number(getFcWtiByMode('custom_seed', 5, base).toFixed(1));
+  fcCustomWti.may = Number(getFcWtiByMode('custom_seed', 9, base).toFixed(1));
+  syncFcCustomControls();
+}
+
+function resetFcCustomToCurrentPrice() {
+  const base = Number(G.wti_gs || G.wti || 90.9);
+  fcCustomWti.mar = Number(base.toFixed(1));
+  fcCustomWti.apr = Number(base.toFixed(1));
+  fcCustomWti.may = Number(base.toFixed(1));
+  syncFcCustomControls();
+  renderForecast();
+}
+
+function getFcWtiByMode(mode, n, base) {
+  if (mode === 'flat' || mode === 'custom_seed') return base;
+  if (mode === 'up') return base + n * 1.0;
+  if (mode === 'down') return base - n * 1.0;
+  if (n <= 4) return fcCustomWti.mar;
+  if (n <= 8) return fcCustomWti.apr;
+  return fcCustomWti.may;
+}
 
 // WTI 경로 반환 (n=1~13)
 function getFcWti(n) {
   const base = G.wti_gs;  // 사전원가 기준: 주간가
-  if (fcMode === 'flat')   return base;
-  if (fcMode === 'up')     return base + n * 1.0;
-  if (fcMode === 'down')   return base - n * 1.0;
-  // custom: 월별 구간
-  if (n <= 4)  return fcCustomWti.mar;
-  if (n <= 8)  return fcCustomWti.apr;
-  return fcCustomWti.may;
+  return getFcWtiByMode(fcMode, n, base);
 }
 
 function setFcScenario(mode) {
+  const prevMode = fcMode;
   fcMode = mode;
   document.querySelectorAll('.fc-btn').forEach(b => {
     b.className = 'fc-btn text-xs border rounded-lg px-3 py-1.5 transition bg-sky-50 text-slate-700 border-slate-300';
@@ -3161,17 +3207,31 @@ function setFcScenario(mode) {
   if (btn) btn.className = `fc-btn text-xs border rounded-lg px-3 py-1.5 transition ${activeMap[mode]}`;
   const cp = document.getElementById('fc-custom-panel');
   if (cp) cp.classList.toggle('hidden', mode !== 'custom');
+  if (mode === 'custom' && prevMode !== 'custom') resetFcCustomToCurrentScenario();
+  syncFcCustomControls();
+  syncFcCustomControls();
   renderForecast();
 }
 
-function onFcCustom() {
-  fcCustomWti.mar = parseFloat(document.getElementById('fc-slider-mar').value);
-  fcCustomWti.apr = parseFloat(document.getElementById('fc-slider-apr').value);
-  fcCustomWti.may = parseFloat(document.getElementById('fc-slider-may').value);
-  document.getElementById('fc-wti-mar').textContent = `$${fcCustomWti.mar.toFixed(1)}`;
-  document.getElementById('fc-wti-apr').textContent = `$${fcCustomWti.apr.toFixed(1)}`;
-  document.getElementById('fc-wti-may').textContent = `$${fcCustomWti.may.toFixed(1)}`;
+function applyFcCustomValue(key, raw) {
+  let v = parseFloat(raw);
+  if (!Number.isFinite(v)) return;
+  v = Math.max(50, Math.min(120, v));
+  fcCustomWti[key] = Number(v.toFixed(1));
+  syncFcCustomControls();
   renderForecast();
+}
+
+function onFcCustomFromSlider(key) {
+  const el = document.getElementById(`fc-slider-${key}`);
+  if (!el) return;
+  applyFcCustomValue(key, el.value);
+}
+
+function onFcCustomFromInput(key) {
+  const el = document.getElementById(`fc-input-${key}`);
+  if (!el) return;
+  applyFcCustomValue(key, el.value);
 }
 
 function renderForecast() {
