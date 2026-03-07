@@ -3174,7 +3174,6 @@ function onFcCustom() {
 }
 
 function renderForecast() {
-  try {
   const curSM = G.sm_act;
   const curAN = G.an;  // AN 실측 (CSV 로드 후 갱신)
   const curBD = G.bd;
@@ -3297,7 +3296,6 @@ function renderForecast() {
   // ─── 그래프도 함께 렌더 ───
   renderFcChart();
 }
-
 
 function renderFcInsight(curSM, curWTI) {
   // W+1, W+4(3월말), W+8(4월말), W+13(5월말) 예측값 요약
