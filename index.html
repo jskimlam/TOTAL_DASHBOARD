@@ -2041,7 +2041,61 @@ function renderWtiGauge() {
 // ══════════════════════════════════════════════
 // 크래커 시뮬레이터
 // ══════════════════════════════════════════════
+
+function niceStep10(v) { return Math.round(v / 10) * 10; }
+function niceFloor10(v) { return Math.floor(v / 10) * 10; }
+function niceCeil10(v) { return Math.ceil(v / 10) * 10; }
+
+function setCrackerSliderRange(sliderId, baseValue) {
+  const slider = document.getElementById(sliderId);
+  if (!slider) return;
+  const base = Number(baseValue || slider.value || 0);
+  const hardMin = Math.max(0, niceFloor10(base * 0.5));
+  const hardMax = niceCeil10(Math.max(base * 1.6, base + 250));
+  slider.min = String(hardMin);
+  slider.max = String(hardMax);
+  updateCrackerSliderScale(sliderId);
+}
+
+function ensureCrackerSliderHeadroom(sliderId) {
+  const slider = document.getElementById(sliderId);
+  if (!slider) return;
+  const v = Number(slider.value || 0);
+  const min = Number(slider.min || 0);
+  const max = Number(slider.max || 0);
+  const span = Math.max(1, max - min);
+  if (v >= max - span * 0.05) {
+    slider.max = String(niceCeil10(Math.max(v * 1.25, v + 150)));
+    updateCrackerSliderScale(sliderId);
+  }
+  if (v <= min + span * 0.05) {
+    slider.min = String(Math.max(0, niceFloor10(Math.min(v * 0.75, v - 100))));
+    updateCrackerSliderScale(sliderId);
+  }
+}
+
+function updateCrackerSliderScale(sliderId) {
+  const slider = document.getElementById(sliderId);
+  if (!slider) return;
+  const scale = slider.nextElementSibling;
+  if (!scale) return;
+  const min = Number(slider.min || 0);
+  const max = Number(slider.max || 0);
+  const step1 = niceStep10(min + (max - min) / 3);
+  const step2 = niceStep10(min + (max - min) * 2 / 3);
+  scale.innerHTML = `<span>$${min}</span><span>$${step1}</span><span>$${step2}</span><span>$${max}</span>`;
+}
+
+function syncCrackerSliderRanges() {
+  setCrackerSliderRange('cr-slider-et', G.et);
+  setCrackerSliderRange('cr-slider-nap', G.nap);
+  setCrackerSliderRange('cr-slider-pr', G.pr_act);
+  setCrackerSliderRange('cr-slider-bz', G.bz);
+  setCrackerSliderRange('cr-slider-bd', G.bd);
+}
+
 function onCrackerSlider() {
+  ['cr-slider-et','cr-slider-nap','cr-slider-pr','cr-slider-bz','cr-slider-bd'].forEach(ensureCrackerSliderHeadroom);
   const et  = parseFloat(document.getElementById('cr-slider-et').value);
   const nap = parseFloat(document.getElementById('cr-slider-nap').value);
   const pr  = parseFloat(document.getElementById('cr-slider-pr').value);
@@ -2236,6 +2290,7 @@ function onCrackerSlider() {
 
 function resetCrackerSliders() {
   crackerUserEdited = false; // 초기화 버튼 누르면 플래그 리셋
+  syncCrackerSliderRanges();
   document.getElementById('cr-slider-et').value  = Math.round(G.et);
   document.getElementById('cr-slider-nap').value = Math.round(G.nap);
   document.getElementById('cr-slider-pr').value  = Math.round(G.pr_act);
