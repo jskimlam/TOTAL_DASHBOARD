@@ -1104,24 +1104,24 @@
         </div>
         <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
           <div>
-            <div class="flex justify-between text-xs mb-1"><span class="text-slate-700">W+1~4 (3월)</span><span id="fc-wti-mar" class="text-amber-700 font-bold">$90.9</span></div>
+            <div class="flex justify-between text-xs mb-1"><span class="text-slate-700">W+1~4 (3월)</span><span id="fc-wti-mar" class="text-amber-700 font-bold">-</span></div>
             <div class="flex items-center gap-2">
-              <input type="range" id="fc-slider-mar" min="50" max="120" step="0.5" value="90.9" class="w-full" oninput="onFcCustomFromSlider('mar')">
-              <input type="number" id="fc-input-mar" min="50" max="120" step="0.5" value="90.9" class="w-20 rounded border border-slate-300 px-2 py-1 text-sm text-right" oninput="onFcCustomFromInput('mar')">
+              <input type="range" id="fc-slider-mar" min="50" max="120" step="0.5" value="50" class="w-full" oninput="onFcCustomFromSlider('mar')">
+              <input type="number" id="fc-input-mar" min="50" max="120" step="0.5" value="" class="w-20 rounded border border-slate-300 px-2 py-1 text-sm text-right" oninput="onFcCustomFromInput('mar')">
             </div>
           </div>
           <div>
-            <div class="flex justify-between text-xs mb-1"><span class="text-slate-700">W+5~8 (4월)</span><span id="fc-wti-apr" class="text-amber-700 font-bold">$90.9</span></div>
+            <div class="flex justify-between text-xs mb-1"><span class="text-slate-700">W+5~8 (4월)</span><span id="fc-wti-apr" class="text-amber-700 font-bold">-</span></div>
             <div class="flex items-center gap-2">
-              <input type="range" id="fc-slider-apr" min="50" max="120" step="0.5" value="90.9" class="w-full" oninput="onFcCustomFromSlider('apr')">
-              <input type="number" id="fc-input-apr" min="50" max="120" step="0.5" value="90.9" class="w-20 rounded border border-slate-300 px-2 py-1 text-sm text-right" oninput="onFcCustomFromInput('apr')">
+              <input type="range" id="fc-slider-apr" min="50" max="120" step="0.5" value="50" class="w-full" oninput="onFcCustomFromSlider('apr')">
+              <input type="number" id="fc-input-apr" min="50" max="120" step="0.5" value="" class="w-20 rounded border border-slate-300 px-2 py-1 text-sm text-right" oninput="onFcCustomFromInput('apr')">
             </div>
           </div>
           <div>
-            <div class="flex justify-between text-xs mb-1"><span class="text-slate-700">W+9~13 (5월)</span><span id="fc-wti-may" class="text-amber-700 font-bold">$90.9</span></div>
+            <div class="flex justify-between text-xs mb-1"><span class="text-slate-700">W+9~13 (5월)</span><span id="fc-wti-may" class="text-amber-700 font-bold">-</span></div>
             <div class="flex items-center gap-2">
-              <input type="range" id="fc-slider-may" min="50" max="120" step="0.5" value="90.9" class="w-full" oninput="onFcCustomFromSlider('may')">
-              <input type="number" id="fc-input-may" min="50" max="120" step="0.5" value="90.9" class="w-20 rounded border border-slate-300 px-2 py-1 text-sm text-right" oninput="onFcCustomFromInput('may')">
+              <input type="range" id="fc-slider-may" min="50" max="120" step="0.5" value="50" class="w-full" oninput="onFcCustomFromSlider('may')">
+              <input type="number" id="fc-input-may" min="50" max="120" step="0.5" value="" class="w-20 rounded border border-slate-300 px-2 py-1 text-sm text-right" oninput="onFcCustomFromInput('may')">
             </div>
           </div>
           <div class="flex items-center">
@@ -3012,118 +3012,114 @@ function alertBadge(absGap) {
   return `<span class="badge-ok">🟢 NORMAL</span>`;
 }
 
-function loadCSV() {
-  Papa.parse('simulation_result.csv?t='+Date.now(), {
-    download:true, header:true, skipEmptyLines:true,
-    complete(res) {
-      if (!res.data?.length) return;
-      const d = res.data[0];
 
-      G.wti_gs        = parseFloat(d.WTI_GSheet)       || G.wti_gs;
-      G.bz            = parseFloat(d.BZ_Actual)        || G.bz;
-      G.et            = parseFloat(d.ET_Actual)        || G.et;
-      G.bd            = parseFloat(d.BD_Actual)        || G.bd;
-      G.an            = parseFloat(d.AN_Actual)        || G.an;
-      G.nap           = parseFloat(d.NAP)              || G.nap;
-      G.sm_act        = parseFloat(d.SM_Actual)        || G.sm_act;
-      G.abs_mkt_act   = parseFloat(d.ABS_Mkt_Actual)   || G.abs_mkt_act;
-      // abs_gap_act: 구글시트에 ABS_Gap_Actual 컬럼 있으면 사용, 없으면 실측 역산
-      if (d.ABS_Gap_Actual && parseFloat(d.ABS_Gap_Actual)) {
-        G.abs_gap_act = parseFloat(d.ABS_Gap_Actual);
-      } else if (G.abs_mkt_act && G.sm_act && G.an && G.bd) {
-        // ABS Gap = Mkt - (SM×0.60 + AN×0.25 + BD×0.15)
-        G.abs_gap_act = G.abs_mkt_act - (G.sm_act*0.60 + G.an*0.25 + G.bd*0.15);
-      }
-      G.pr_act        = parseFloat(d.PR_Actual)        || G.pr_act;
-      G.bz_ara_act    = parseFloat(d.BZ_ARA_Actual)    || G.bz_ara_act;
-      G.bz_usg_mt_act = parseFloat(d.BZ_USG_Actual)   || G.bz_usg_mt_act;
-      G.sm_margin_act = parseFloat(d.SM_Margin_Actual) || G.sm_margin_act;
-      G.cracker_act   = parseFloat(d.Cracker_Margin_Act)|| G.cracker_act;
-      G.gs_date       = inferBaseDateFromRow(d);
+function applyDashboardData(d, opts = {}) {
+  if (!d) return false;
 
-      if (d.NAP_Sens_Equiv_Basis) NAP_EQUIV = parseFloat(d.NAP_Sens_Equiv_Basis) || NAP_EQUIV;
+  const num = (v, fallback=null) => {
+    const n = parseFloat(v);
+    return Number.isFinite(n) ? n : fallback;
+  };
 
-      if (d.Sens_BZ)       { SENS.bz       = parseFloat(d.Sens_BZ);       setSensCard('bz',       d.Sens_BZ,       d.R2_BZ);       }
-      if (d.Sens_ET)       { SENS.et       = parseFloat(d.Sens_ET);       setSensCard('et',       d.Sens_ET,       d.R2_ET);       }
-      if (d.Sens_SM)       { SENS.sm       = parseFloat(d.Sens_SM);       setSensCard('sm',       d.Sens_SM,       d.R2_SM);       }
-      if (d.Sens_BD)       { SENS.bd       = parseFloat(d.Sens_BD);       setSensCard('bd',       d.Sens_BD,       d.R2_BD);       }
-      if (d.Sens_AN)       { SENS.an       = parseFloat(d.Sens_AN);       setSensCard('an',       d.Sens_AN,       d.R2_AN);       }
-      if (d.Sens_NAP)      { SENS.nap      = parseFloat(d.Sens_NAP);      setSensCard('nap',      d.Sens_NAP,      d.R2_NAP);      }
-      if (d.Sens_PR)       { SENS.pr       = parseFloat(d.Sens_PR);       setSensCard('pr',       d.Sens_PR,       d.R2_PR);       }
-      if (d.Sens_ABS_MKT)  { SENS.abs_mkt  = parseFloat(d.Sens_ABS_MKT);  setSensCard('abs_mkt',  d.Sens_ABS_MKT,  d.R2_ABS_MKT);  }
-      if (d.Sens_ABS_GAP)  { SENS.abs_gap  = parseFloat(d.Sens_ABS_GAP);  setSensCard('abs_gap',  d.Sens_ABS_GAP,  d.R2_ABS_GAP);  }
-      if (d.Sens_SM_COST)  { SENS.sm_cost  = parseFloat(d.Sens_SM_COST);  setSensCard('sm_cost',  d.Sens_SM_COST);                 }
-      // 민감도 탭이 활성화 상태면 차트 갱신
-      if (!document.getElementById('tab-sens').classList.contains('hidden')) renderSensCharts();
-      if (d.Sens_SM_MARGIN){ SENS.sm_margin= parseFloat(d.Sens_SM_MARGIN);}
+  G.wti_gs        = num(d.WTI_GSheet ?? d.WTI, G.wti_gs);
+  G.wti           = num(d.WTI, G.wti ?? G.wti_gs);
+  G.bz            = num(d.BZ_Actual ?? d.BZ, G.bz);
+  G.et            = num(d.ET_Actual ?? d.ET, G.et);
+  G.bd            = num(d.BD_Actual ?? d.BD, G.bd);
+  G.an            = num(d.AN_Actual ?? d.AN, G.an);
+  G.nap           = num(d.NAP, G.nap);
+  G.sm_act        = num(d.SM_Actual ?? d.SM_Market ?? d.SM, G.sm_act);
+  G.abs_mkt_act   = num(d.ABS_Mkt_Actual ?? d.ABS_Mkt ?? d.ABS, G.abs_mkt_act);
+  G.pr_act        = num(d.PR_Actual ?? d.PR, G.pr_act);
+  G.bz_ara_act    = num(d.BZ_ARA_Actual ?? d.BZ_ARA, G.bz_ara_act);
+  G.bz_usg_mt_act = num(d.BZ_USG_Actual ?? d.BZ_USG_MT, G.bz_usg_mt_act);
+  G.sm_margin_act = num(d.SM_Margin_Actual ?? d.SM_Margin, G.sm_margin_act);
+  G.cracker_act   = num(d.Cracker_Margin_Act ?? d.Cracker_Margin, G.cracker_act);
+  G.gs_date       = d.GSheet_Date || d.gs_date || d.Date || G.gs_date;
 
-      document.getElementById('update-time').textContent = '구글시트 주간 데이터';
-      document.getElementById('gs-date').textContent     = `기준일 ${G.gs_date}`;
-      if (d.Reg_N) document.getElementById('reg-meta').textContent = d.Reg_N+'주 데이터';
+  if (num(d.ABS_Gap_Actual) !== null) {
+    G.abs_gap_act = num(d.ABS_Gap_Actual, G.abs_gap_act);
+  } else if (Number.isFinite(G.abs_mkt_act) && Number.isFinite(G.sm_act) && Number.isFinite(G.an) && Number.isFinite(G.bd)) {
+    G.abs_gap_act = G.abs_mkt_act - (G.sm_act*0.60 + G.an*0.25 + G.bd*0.15);
+  }
 
-      // 크래커 슬라이더 실측값 라벨 갱신
-      document.getElementById('cr-et-actual').textContent  = `$${Math.round(G.et)}`;
-      document.getElementById('cr-nap-actual').textContent = `$${Math.round(G.nap)}`;
+  if (num(d.NAP_Sens_Equiv_Basis) !== null) NAP_EQUIV = num(d.NAP_Sens_Equiv_Basis, NAP_EQUIV);
 
-      updateDashboard();
-    },
-    error() { document.getElementById('update-time').textContent = 'CSV 로드 실패'; }
-  });
+  if (num(d.Sens_BZ)      !== null) { SENS.bz      = num(d.Sens_BZ, SENS.bz);             setSensCard('bz',      d.Sens_BZ,      d.R2_BZ); }
+  if (num(d.Sens_ET)      !== null) { SENS.et      = num(d.Sens_ET, SENS.et);             setSensCard('et',      d.Sens_ET,      d.R2_ET); }
+  if (num(d.Sens_SM)      !== null) { SENS.sm      = num(d.Sens_SM, SENS.sm);             setSensCard('sm',      d.Sens_SM,      d.R2_SM); }
+  if (num(d.Sens_BD)      !== null) { SENS.bd      = num(d.Sens_BD, SENS.bd);             setSensCard('bd',      d.Sens_BD,      d.R2_BD); }
+  if (num(d.Sens_AN)      !== null) { SENS.an      = num(d.Sens_AN, SENS.an);             setSensCard('an',      d.Sens_AN,      d.R2_AN); }
+  if (num(d.Sens_NAP)     !== null) { SENS.nap     = num(d.Sens_NAP, SENS.nap);           setSensCard('nap',     d.Sens_NAP,     d.R2_NAP); }
+  if (num(d.Sens_PR)      !== null) { SENS.pr      = num(d.Sens_PR, SENS.pr);             setSensCard('pr',      d.Sens_PR,      d.R2_PR); }
+  if (num(d.Sens_ABS_MKT) !== null) { SENS.abs_mkt = num(d.Sens_ABS_MKT, SENS.abs_mkt);   setSensCard('abs_mkt', d.Sens_ABS_MKT, d.R2_ABS_MKT); }
+  if (num(d.Sens_ABS_GAP) !== null) { SENS.abs_gap = num(d.Sens_ABS_GAP, SENS.abs_gap);   setSensCard('abs_gap', d.Sens_ABS_GAP, d.R2_ABS_GAP); }
+  if (num(d.Sens_SM_COST) !== null) { SENS.sm_cost = num(d.Sens_SM_COST, SENS.sm_cost);   setSensCard('sm_cost', d.Sens_SM_COST); }
+  if (num(d.Sens_SM_MARGIN) !== null) SENS.sm_margin = num(d.Sens_SM_MARGIN, SENS.sm_margin);
+
+  const updateLabel = opts.message || '구글시트 실시간 데이터';
+  const updateTimeEl = document.getElementById('update-time');
+  const gsDateEl = document.getElementById('gs-date');
+  const regMetaEl = document.getElementById('reg-meta');
+  if (updateTimeEl) updateTimeEl.textContent = updateLabel;
+  if (gsDateEl) gsDateEl.textContent = `기준일 ${G.gs_date}`;
+  if (regMetaEl && d.Reg_N) regMetaEl.textContent = d.Reg_N + '주 데이터';
+
+  const etAct = document.getElementById('cr-et-actual');
+  const napAct = document.getElementById('cr-nap-actual');
+  if (etAct) etAct.textContent = `$${Math.round(G.et)}`;
+  if (napAct) napAct.textContent = `$${Math.round(G.nap)}`;
+
+  if (!document.getElementById('tab-sens').classList.contains('hidden')) renderSensCharts();
+  updateDashboard();
+  return true;
+}
+
+async function fetchDashboardData() {
+  const sep = GAS_URL.includes('?') ? '&' : '?';
+  const url = `${GAS_URL}${sep}action=getDashboardData&t=${Date.now()}`;
+  const res = await fetch(url, { cache: 'no-store' });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const json = await res.json();
+  if (json.status && json.status !== 'OK') throw new Error(json.msg || '데이터 로드 실패');
+  return json.row || json.data || json;
+}
+
+async function loadCSV() {
+  try {
+    const d = await fetchDashboardData();
+    applyDashboardData(d, { message: '구글시트 실시간 데이터' });
+  } catch (err) {
+    const updateTimeEl = document.getElementById('update-time');
+    if (updateTimeEl) updateTimeEl.textContent = 'GAS 로드 실패';
+    console.error(err);
+  }
 }
 
 // ── 수동 시장가격 갱신 (📡 버튼용) — 전체 데이터 갱신 후 슬라이더 초기화
-function manualRefreshData() {
+async function manualRefreshData() {
   const btn = document.getElementById('btn-refresh-data');
   if (btn) {
     btn.textContent = '⏳ 갱신 중...';
     btn.disabled = true;
   }
-  Papa.parse('simulation_result.csv?t='+Date.now(), {
-    download:true, header:true, skipEmptyLines:true,
-    complete(res) {
-      if (!res.data?.length) {
-        if (btn) { btn.textContent = '❌ 실패'; btn.disabled = false; }
-        return;
-      }
-      const d = res.data[0];
-      // 전체 주간가격 갱신
-      G.wti_gs        = parseFloat(d.WTI_GSheet)        || G.wti_gs;
-      G.bz            = parseFloat(d.BZ_Actual)         || G.bz;
-      G.et            = parseFloat(d.ET_Actual)         || G.et;
-      G.bd            = parseFloat(d.BD_Actual)         || G.bd;
-      G.an            = parseFloat(d.AN_Actual)         || G.an;
-      G.nap           = parseFloat(d.NAP)               || G.nap;
-      G.sm_act        = parseFloat(d.SM_Actual)         || G.sm_act;
-      G.abs_mkt_act   = parseFloat(d.ABS_Mkt_Actual)    || G.abs_mkt_act;
-      // abs_gap_act: 구글시트에 ABS_Gap_Actual 컬럼 있으면 사용, 없으면 실측 역산
-      if (d.ABS_Gap_Actual && parseFloat(d.ABS_Gap_Actual)) {
-        G.abs_gap_act = parseFloat(d.ABS_Gap_Actual);
-      } else if (G.abs_mkt_act && G.sm_act && G.an && G.bd) {
-        G.abs_gap_act = G.abs_mkt_act - (G.sm_act*0.60 + G.an*0.25 + G.bd*0.15);
-      }
-      G.pr_act        = parseFloat(d.PR_Actual)         || G.pr_act;
-      G.bz_ara_act    = parseFloat(d.BZ_ARA_Actual)     || G.bz_ara_act;
-      G.bz_usg_mt_act = parseFloat(d.BZ_USG_Actual)    || G.bz_usg_mt_act;
-      G.sm_margin_act = parseFloat(d.SM_Margin_Actual)  || G.sm_margin_act;
-      G.cracker_act   = parseFloat(d.Cracker_Margin_Act)|| G.cracker_act;
-      G.gs_date       = inferBaseDateFromRow(d);
-      document.getElementById('update-time').textContent = '구글시트 주간 데이터';
-      document.getElementById('gs-date').textContent     = `기준일 ${G.gs_date}`;
-      // 대시보드 전체 갱신 + 슬라이더 초기화
-      crackerUserEdited = false;
-      updateDashboard();
-      if (btn) {
-        btn.textContent = '✅ 갱신 완료';
-        btn.disabled = false;
-        setTimeout(() => { btn.textContent = '📡 시장가격 갱신'; }, 2000);
-      }
-    },
-    error() {
-      if (btn) { btn.textContent = '❌ 실패'; btn.disabled = false;
-        setTimeout(() => { btn.textContent = '📡 시장가격 갱신'; }, 2000);
-      }
+  try {
+    const d = await fetchDashboardData();
+    crackerUserEdited = false;
+    applyDashboardData(d, { message: '구글시트 실시간 데이터' });
+    if (btn) {
+      btn.textContent = '✅ 갱신 완료';
+      btn.disabled = false;
+      setTimeout(() => { btn.textContent = '📡 시장가격 갱신'; }, 2000);
     }
-  });
+  } catch (err) {
+    console.error(err);
+    if (btn) {
+      btn.textContent = '❌ 실패';
+      btn.disabled = false;
+      setTimeout(() => { btn.textContent = '📡 시장가격 갱신'; }, 2000);
+    }
+  }
 }
 
 function refreshImg() {
@@ -3149,23 +3145,23 @@ const FC_STD  = {SM: 52.62,  AN: 52.58,  BD: 149.25};
 
 // 예측 기준 주차/날짜는 CSV 기준일(G.gs_date)로 자동 롤링
 let fcMode = 'flat';
-let fcCustomWti = {mar:90.9, apr:90.9, may:90.9};
+let fcCustomWti = {mar:null, apr:null, may:null};
 
 
 function syncFcCustomControls() {
   ['mar','apr','may'].forEach(k => {
-    const v = Number(fcCustomWti[k] ?? G.wti_gs ?? 90.9);
+    const v = Number(fcCustomWti[k] ?? G.wti_gs ?? G.wti ?? 0);
     const slider = document.getElementById(`fc-slider-${k}`);
     const input = document.getElementById(`fc-input-${k}`);
     const label = document.getElementById(`fc-wti-${k}`);
     if (slider) slider.value = v;
-    if (input) input.value = v.toFixed(1);
-    if (label) label.textContent = `$${v.toFixed(1)}`;
+    if (input) input.value = v ? v.toFixed(1) : '';
+    if (label) label.textContent = v ? `$${v.toFixed(1)}` : '-';
   });
 }
 
 function resetFcCustomToCurrentScenario() {
-  const base = Number(G.wti_gs || G.wti || 90.9);
+  const base = Number(G.wti_gs ?? G.wti ?? 0);
   fcCustomWti.mar = Number(getFcWtiByMode('custom_seed', 1, base).toFixed(1));
   fcCustomWti.apr = Number(getFcWtiByMode('custom_seed', 5, base).toFixed(1));
   fcCustomWti.may = Number(getFcWtiByMode('custom_seed', 9, base).toFixed(1));
@@ -3173,7 +3169,7 @@ function resetFcCustomToCurrentScenario() {
 }
 
 function resetFcCustomToCurrentPrice() {
-  const base = Number(G.wti_gs || G.wti || 90.9);
+  const base = Number(G.wti_gs ?? G.wti ?? 0);
   fcCustomWti.mar = Number(base.toFixed(1));
   fcCustomWti.apr = Number(base.toFixed(1));
   fcCustomWti.may = Number(base.toFixed(1));
@@ -4249,7 +4245,7 @@ setInterval(refreshImg, 300000);
 // ══════════════════════════════════════════════════
 // 사전원가 예측 → 구글시트 저장
 // ══════════════════════════════════════════════════
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxfaXVqYbA8kzWH5hjZrqGwcPrs0XjHUcBV-dLb3kwMp90VyjF9TPhw7iNYX0W9ZAc2/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbx04Ff_9N2F7RwPH7x0HIjQ628h5yOppyOPpGWLvf4MfsuSXtgdUCaVpW9l-fKaGiBX/exec';
 
 async function saveForecastToSheet() {
   const btn = document.getElementById('fc-save-btn');
